@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, ArrowRight, Chrome, Github } from 'lucide-react';
 import { ActiveView, UserState } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface LoginPageProps {
   onNavigate: (view: ActiveView) => void;
@@ -15,28 +16,91 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleTabChange = (tab: 'login' | 'signup') => {
+    setActiveTab(tab);
+    setErrorMessage('');
+    setSuccessMessage('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
     if (!email || !password) {
-      setErrorMessage('Please fill in all security fields.');
+      setErrorMessage('모든 보안 필드를 입력해주세요.');
       return;
     }
     if (activeTab === 'signup' && !fullName) {
-      setErrorMessage('Please provide your full name.');
+      setErrorMessage('성함을 입력해주세요.');
       return;
     }
 
-    // Success login mock representing real authentication
-    const user: UserState = {
-      isAuthenticated: true,
-      email: email,
-      fullName: activeTab === 'signup' ? fullName : (email.split('@')[0] || 'Developer'),
-      plan: 'pro' // Default Pro setup for high workspace support
-    };
-    
-    onLoginSuccess(user);
-    onNavigate('dashboard');
+    setLoading(true);
+
+    try {
+      if (activeTab === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+          setLoading(false);
+          return;
+        }
+
+        // If a session was automatically created by signUp (e.g., if confirm email is disabled), 
+        // sign out immediately to prevent auto-login and force manual verification/login.
+        if (data.session) {
+          await supabase.auth.signOut();
+        }
+
+        setSuccessMessage('Your account has been created. Please check your email and verify your address before logging in.');
+        setActiveTab('login');
+        setPassword('');
+        setFullName('');
+        setLoading(false);
+        return;
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+          setLoading(false);
+          return;
+        }
+
+        if (data.session && data.user) {
+          const user: UserState = {
+            isAuthenticated: true,
+            email: data.user.email || email,
+            fullName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+            plan: 'pro', // Default Pro setup as in the original mock
+          };
+          onLoginSuccess(user);
+          onNavigate('dashboard');
+        } else {
+          setErrorMessage('로그인 세션이 유효하지 않습니다. 이메일을 확인하고 계정을 확정해주세요.');
+        }
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || '인증 중 예기치 못한 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSocialClick = (platform: string) => {
@@ -128,7 +192,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
                   ? 'bg-[#1ebd1e]/0 bg-[#27272a] text-white shadow-sm' 
                   : 'text-[#a1a1aa] hover:text-white'
               }`}
-              onClick={() => { setActiveTab('login'); setErrorMessage(''); }}
+              onClick={() => handleTabChange('login')}
             >
               Log In
             </button>
@@ -139,7 +203,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
                   ? 'bg-[#27272a] text-white shadow-sm' 
                   : 'text-[#a1a1aa] hover:text-white'
               }`}
-              onClick={() => { setActiveTab('signup'); setErrorMessage(''); }}
+              onClick={() => handleTabChange('signup')}
             >
               Sign Up
             </button>
@@ -149,6 +213,13 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
           {errorMessage && (
             <div className="text-xs text-red-400 bg-red-950/20 border border-red-900/40 p-2.5 rounded-lg text-center">
               {errorMessage}
+            </div>
+          )}
+
+          {/* Form success banner */}
+          {successMessage && (
+            <div className="text-xs text-emerald-400 bg-emerald-950/20 border border-emerald-900/40 p-2.5 rounded-lg text-center">
+              {successMessage}
             </div>
           )}
 
@@ -230,10 +301,17 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
             {/* Submit Action */}
             <button 
               type="submit" 
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-[#0a0012] bg-[#a78bfa] hover:bg-[#bbf7d0] transition-colors cursor-pointer active:scale-95"
+              disabled={loading}
+              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-[#0a0012] bg-[#a78bfa] hover:bg-[#bbf7d0] transition-colors cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {activeTab === 'login' ? 'Sign in' : 'Create Account'}
-              <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                <span>처리하는 중...</span>
+              ) : (
+                <>
+                  {activeTab === 'login' ? 'Sign in' : 'Create Account'}
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 

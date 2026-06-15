@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NoteItem, ActiveView, UserState } from './types';
+import { supabase } from './lib/supabase';
 import LandingPage from './components/LandingPage';
 import PricingPage from './components/PricingPage';
 import LoginPage from './components/LoginPage';
@@ -45,18 +46,78 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ActiveView>('landing');
   const [currentUser, setCurrentUser] = useState<UserState>({
     isAuthenticated: false,
-    email: 'developer@obsidian.com',
-    fullName: 'Escualo Developer',
+    email: '',
+    fullName: '',
     plan: 'free'
   });
 
   const [notes, setNotes] = useState<NoteItem[]>(DEFAULT_NOTES);
   const [selectedNote, setSelectedNote] = useState<NoteItem>(DEFAULT_NOTES[0]);
 
+  // Sync Supabase Auth session status
+  useEffect(() => {
+    const syncSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Session sync failed:', error);
+        return;
+      }
+      
+      if (session?.user) {
+        setCurrentUser({
+          isAuthenticated: true,
+          email: session.user.email || '',
+          fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          plan: 'pro'
+        });
+        setCurrentView(prev => (prev === 'landing' || prev === 'login') ? 'dashboard' : prev);
+      } else {
+        setCurrentUser({
+          isAuthenticated: false,
+          email: '',
+          fullName: '',
+          plan: 'free'
+        });
+        setCurrentView(prev => (prev === 'dashboard' || prev === 'editor') ? 'login' : prev);
+      }
+    };
+
+    syncSession();
+
+    // Setup authenticating listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setCurrentUser({
+          isAuthenticated: true,
+          email: session.user.email || '',
+          fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          plan: 'pro'
+        });
+      } else {
+        setCurrentUser({
+          isAuthenticated: false,
+          email: '',
+          fullName: '',
+          plan: 'free'
+        });
+        setCurrentView(prev => (prev === 'dashboard' || prev === 'editor') ? 'login' : prev);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Navigate to screen with authorization guards if required
-  const handleNav = (view: ActiveView) => {
-    if ((view === 'dashboard' || view === 'editor') && !currentUser.isAuthenticated) {
-      setCurrentView('login');
+  const handleNav = async (view: ActiveView) => {
+    if (view === 'dashboard' || view === 'editor') {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setCurrentView('login');
+      } else {
+        setCurrentView(view);
+      }
     } else {
       setCurrentView(view);
     }
@@ -71,7 +132,8 @@ export default function App() {
     handleNav('editor');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser({
       isAuthenticated: false,
       email: '',
