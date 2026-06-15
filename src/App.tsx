@@ -137,8 +137,112 @@ export default function App() {
     }
   }, []);
 
-  const [notes, setNotes] = useState<NoteItem[]>(DEFAULT_NOTES);
-  const [selectedNote, setSelectedNote] = useState<NoteItem>(DEFAULT_NOTES[0]);
+  const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [selectedNote, setSelectedNote] = useState<NoteItem | null>(null);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+
+  // Helper to format ISO timestamptz nicely matching expected layout style
+  const formatTime = (isoString: string | null): string => {
+    if (!isoString) return 'Just now';
+    try {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMins = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMins / 60);
+      
+      if (diffInMins < 1) return 'Just now';
+      if (diffInMins < 60) return `${diffInMins}m ago`;
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      if (diffInHours < 48) return 'Yesterday';
+      
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return 'Just now';
+    }
+  };
+
+  const fetchNotes = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setNotes([]);
+      setSelectedNote(null);
+      return;
+    }
+
+    setIsLoadingNotes(true);
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching notes from Supabase:', error);
+        // Fallback to empty if table doesn't exist or other network issue
+        setNotes([]);
+        setSelectedNote(null);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const mappedNotes: NoteItem[] = data.map((dbNote: any) => ({
+          id: dbNote.id,
+          title: dbNote.title,
+          content: dbNote.content,
+          tags: dbNote.tags || [],
+          updatedAt: formatTime(dbNote.updated_at),
+          snippetCode: dbNote.snippet_code || undefined,
+          isSnippet: dbNote.is_snippet || false,
+        }));
+        setNotes(mappedNotes);
+
+        setSelectedNote(prevSelected => {
+          if (prevSelected) {
+            const foundObj = mappedNotes.find(item => item.id === prevSelected.id);
+            if (foundObj) return foundObj;
+          }
+          return mappedNotes[0];
+        });
+      } else {
+        // Automatically seed an initial welcome document for the new user profile
+        const welcomeDoc = {
+          user_id: session.user.id,
+          title: 'Welcome to Escualo Workspace',
+          content: `# Welcome to Escualo Workspace\n\nYour personal document vault is now connected live to Supabase Auth & Postgres!\n\n## Get Started\n- [ ] Create a new note using the sidebar "New Note" button.\n- [ ] Write rich GitHub Flavored Markdown.\n- [ ] Use format tools at the top to accelerate styling.\n\nEnjoy editing with speeds.`,
+          tags: ['welcome', 'guide'],
+          is_snippet: false,
+        };
+
+        const { data: seedData, error: seedError } = await supabase
+          .from('notes')
+          .insert([welcomeDoc])
+          .select()
+          .single();
+
+        if (!seedError && seedData) {
+          const seededNote: NoteItem = {
+            id: seedData.id,
+            title: seedData.title,
+            content: seedData.content,
+            tags: seedData.tags || [],
+            updatedAt: 'Just now',
+            snippetCode: seedData.snippet_code || undefined,
+            isSnippet: seedData.is_snippet || false,
+          };
+          setNotes([seededNote]);
+          setSelectedNote(seededNote);
+        } else {
+          setNotes([]);
+          setSelectedNote(null);
+        }
+      }
+    } catch (err) {
+      console.error('Unexpected error during notes fetch:', err);
+    } finally {
+      setIsLoadingNotes(false);
+    }
+  };
 
   // Sync Supabase Auth session status
   useEffect(() => {
@@ -195,6 +299,16 @@ export default function App() {
     };
   }, []);
 
+  // Fetch user notes when authenticated state transitions to true
+  useEffect(() => {
+    if (currentUser.isAuthenticated) {
+      fetchNotes();
+    } else {
+      setNotes([]);
+      setSelectedNote(null);
+    }
+  }, [currentUser.isAuthenticated]);
+
   // Navigate to screen with authorization guards if required
   const handleNav = async (view: ActiveView) => {
     if (view === 'dashboard' || view === 'editor') {
@@ -226,40 +340,113 @@ export default function App() {
       fullName: '',
       plan: 'free'
     });
+    setNotes([]);
+    setSelectedNote(null);
     setCurrentView('landing');
   };
 
-  const handleUpdateNote = (updatedNote: NoteItem) => {
+  const handleUpdateNote = async (updatedNote: NoteItem) => {
+    // Optimistic client update first
     setNotes(prevNotes => 
       prevNotes.map(n => n.id === updatedNote.id ? updatedNote : n)
     );
-    if (selectedNote.id === updatedNote.id) {
+    if (selectedNote && selectedNote.id === updatedNote.id) {
       setSelectedNote(updatedNote);
+    }
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .update({
+          title: updatedNote.title,
+          content: updatedNote.content,
+          tags: updatedNote.tags,
+          is_snippet: updatedNote.isSnippet || false,
+          snippet_code: updatedNote.snippetCode || null,
+        })
+        .eq('id', updatedNote.id);
+
+      if (error) {
+        console.error('Error updating note in database:', error);
+      }
+    } catch (err) {
+      console.error('Update save failed:', err);
     }
   };
 
-  const handleCreateNewNote = () => {
-    const newNote: NoteItem = {
-      id: `note-${Date.now()}`,
+  const handleCreateNewNote = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const newDbNote = {
+      user_id: session.user.id,
       title: 'New Workspace Document',
       content: '# New Workspace Document\n\nStart coding or writing here...\n\n- [ ] Double-click formatting tools at top\n- [ ] Drag files to attachments side panel\n- [ ] Write rich GitHub Markdown codes.',
       tags: ['draft'],
-      updatedAt: 'Just now'
+      is_snippet: false,
     };
 
-    setNotes(prevNotes => [newNote, ...prevNotes]);
-    setSelectedNote(newNote);
-    handleNav('editor');
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([newDbNote])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating note in database:', error);
+        alert('노트 저장 실패: ' + error.message);
+        return;
+      }
+
+      if (data) {
+        const createdNote: NoteItem = {
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          tags: data.tags || [],
+          updatedAt: 'Just now',
+          snippetCode: data.snippet_code || undefined,
+          isSnippet: data.is_snippet || false,
+        };
+
+        setNotes(prevNotes => [createdNote, ...prevNotes]);
+        setSelectedNote(createdNote);
+        handleNav('editor');
+      }
+    } catch (err: any) {
+      console.error('Creation workspace document failed:', err);
+    }
   };
 
-  const handleDeleteNote = (noteId: string) => {
-    setNotes(prevNotes => prevNotes.filter(n => n.id !== noteId));
-    // If deleted current active note, replace with first index or index 0
-    if (selectedNote.id === noteId) {
-      const remainingArr = notes.filter(n => n.id !== noteId);
+  const handleDeleteNote = async (noteId: string) => {
+    const remainingArr = notes.filter(n => n.id !== noteId);
+    setNotes(remainingArr);
+
+    if (selectedNote && selectedNote.id === noteId) {
       if (remainingArr.length > 0) {
         setSelectedNote(remainingArr[0]);
+      } else {
+        setSelectedNote(null);
       }
+    }
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) {
+        console.error('Error deleting note in database:', error);
+        alert('노트 삭제 실패: ' + error.message);
+        fetchNotes(); // Re-fetch on sync mismatch
+      }
+    } catch (err) {
+      console.error('Deletion request failed:', err);
     }
   };
 
@@ -299,7 +486,13 @@ export default function App() {
       {currentView === 'editor' && (
         <NoteEditorView 
           user={currentUser}
-          activeNote={selectedNote}
+          activeNote={selectedNote || {
+            id: 'temp-loading',
+            title: 'No Active Note',
+            content: '# No Active Note\n\nCreate a new document, or click a note from your sidebar list.',
+            tags: ['status'],
+            updatedAt: 'Just now'
+          }}
           notes={notes}
           onNavigate={handleNav}
           onUpdateNote={handleUpdateNote}
