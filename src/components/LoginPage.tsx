@@ -103,6 +103,101 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
     }
   };
 
+  React.useEffect(() => {
+    const handleOAuthMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      
+      const isOauthSuccess = 
+        event.data === 'oauth_success' || 
+        (event.data && typeof event.data === 'object' && event.data.type === 'oauth_success');
+
+      if (isOauthSuccess) {
+        setLoading(true);
+        try {
+          let currentSession = null;
+          
+          // If the popup sent us the access and refresh tokens, apply them explicitly
+          if (event.data && typeof event.data === 'object' && event.data.access_token && event.data.refresh_token) {
+            const { data, error: setError } = await supabase.auth.setSession({
+              access_token: event.data.access_token,
+              refresh_token: event.data.refresh_token
+            });
+            if (setError) {
+              setErrorMessage(setError.message);
+              setLoading(false);
+              return;
+            }
+            currentSession = data.session;
+          }
+
+          // If no session from explicit token set, try to get the current session
+          if (!currentSession) {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) {
+              setErrorMessage(error.message);
+              setLoading(false);
+              return;
+            }
+            currentSession = session;
+          }
+
+          if (currentSession?.user) {
+            const user: UserState = {
+              isAuthenticated: true,
+              email: currentSession.user.email || '',
+              fullName: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
+              plan: 'pro',
+            };
+            onLoginSuccess(user);
+            onNavigate('dashboard');
+          } else {
+            setErrorMessage('Could not retrieve social login user session.');
+          }
+        } catch (err: any) {
+          setErrorMessage(err.message || '인증 정보 확인 중 오류가 발생했습니다.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    window.addEventListener('message', handleOAuthMessage);
+    return () => window.removeEventListener('message', handleOAuthMessage);
+  }, [onNavigate, onLoginSuccess]);
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data?.url) {
+        const popup = window.open(data.url, 'oauth_popup', 'width=600,height=700');
+        if (!popup) {
+          setErrorMessage('팝업 차단이 감지되었습니다. 팝업 설정을 변경하고 다시 시도해주세요.');
+        }
+      } else {
+        setErrorMessage('Google 로그인 URL 생성에 실패했습니다.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Google 로그인 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSocialClick = (platform: string) => {
     const user: UserState = {
       isAuthenticated: true,
@@ -337,7 +432,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
             </button>
             <button 
               type="button"
-              onClick={() => handleSocialClick('Google')}
+              onClick={handleGoogleLogin}
               className="w-full inline-flex justify-center items-center py-2 px-4 border border-[#27272a] rounded-md bg-[#121215] hover:bg-[#18181b] text-xs font-semibold text-white transition-colors cursor-pointer"
             >
               <Chrome className="w-4 h-4 mr-2 text-brand-accent" />

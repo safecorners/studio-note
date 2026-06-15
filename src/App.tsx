@@ -51,6 +51,92 @@ export default function App() {
     plan: 'free'
   });
 
+  // Handle OAuth callback popup closing
+  useEffect(() => {
+    if (window.opener && (window.location.hash.includes('access_token=') || window.location.href.includes('code='))) {
+      // We are in the popup and returning from Google OAuth redirect.
+      let active = true;
+      let subscriptionObj: { unsubscribe: () => void } | null = null;
+      let timer: { [Symbol.toPrimitive]?: any } | any = null;
+
+      const getSessionAndPost = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session && active) {
+            window.opener.postMessage({
+              type: 'oauth_success',
+              access_token: session.access_token,
+              refresh_token: session.refresh_token
+            }, window.location.origin);
+            window.close();
+            return;
+          }
+        } catch (e) {
+          console.error('Error getting session in popup:', e);
+        }
+
+        // If session is not immediately available, listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (session && active) {
+            try {
+              window.opener.postMessage({
+                type: 'oauth_success',
+                access_token: session.access_token,
+                refresh_token: session.refresh_token
+              }, window.location.origin);
+              subscription.unsubscribe();
+              window.close();
+            } catch (e) {
+              console.error('Failed to notify parent window:', e);
+            }
+          }
+        });
+        subscriptionObj = subscription;
+
+        // Timeout fallback to parse token from hash/url manually just in case
+        timer = setTimeout(() => {
+          if (!active) return;
+          try {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const searchParams = new URLSearchParams(window.location.search);
+            const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+            if (accessToken && refreshToken) {
+              window.opener.postMessage({
+                type: 'oauth_success',
+                access_token: accessToken,
+                refresh_token: refreshToken
+              }, window.location.origin);
+              if (subscriptionObj) subscriptionObj.unsubscribe();
+              window.close();
+            } else {
+              window.opener.postMessage('oauth_success', window.location.origin);
+              if (subscriptionObj) subscriptionObj.unsubscribe();
+              window.close();
+            }
+          } catch (e) {
+            console.error('Fallback failed:', e);
+            window.opener.postMessage('oauth_success', window.location.origin);
+            if (subscriptionObj) subscriptionObj.unsubscribe();
+            window.close();
+          }
+        }, 1200);
+      };
+
+      getSessionAndPost();
+
+      return () => {
+        active = false;
+        if (subscriptionObj) {
+          subscriptionObj.unsubscribe();
+        }
+        if (timer) {
+          clearTimeout(timer);
+        }
+      };
+    }
+  }, []);
+
   const [notes, setNotes] = useState<NoteItem[]>(DEFAULT_NOTES);
   const [selectedNote, setSelectedNote] = useState<NoteItem>(DEFAULT_NOTES[0]);
 
