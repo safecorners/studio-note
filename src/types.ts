@@ -30,6 +30,7 @@ export interface UserState {
   email: string;
   fullName: string;
   plan: 'free' | 'pro' | 'enterprise';
+  id?: string;
 }
 
 export interface OrderSummary {

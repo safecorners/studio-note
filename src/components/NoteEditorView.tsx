@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Home, FileText, Edit2, User, LogOut, Upload, FileCode, FileImage, 
   FileCheck, File, Bold, Italic, Strikethrough, Code, Link as LinkIcon, 
-  Quote, List as ListIcon, Save, Heart, Sparkles, Eye, Share2, Globe, ArrowLeft
+  Quote, List as ListIcon, Save, Heart, Sparkles, Eye, Share2, Globe, ArrowLeft,
+  Trash2, Loader2
 } from 'lucide-react';
 import { ActiveView, NoteItem, AttachmentItem, UserState } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface NoteEditorViewProps {
   user: UserState;
@@ -35,13 +37,10 @@ export default function NoteEditorView({
   // Line calculations for Raw Editor
   const [lineNumbers, setLineNumbers] = useState<number[]>([1]);
 
-  // Initial Attachments list
-  const [attachments, setAttachments] = useState<AttachmentItem[]>([
-    { id: 'att-1', name: 'architecture_v2.png', size: '1.2 MB', type: 'image', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUpYGNX8N9xYT1tFLlDzJz7Vxt4ZwyCCxrORQ29DQ5L_V68eQq3GD3tjhrIuFWpPghihD-Yh2ARFAP76VftpPjN9ZgjL88Xizx9NJaiqgvnFGNFEv_8p_VV26Y2nULeDhxWRfFlQ8EzH_mxleufPwivexrkNYQfT0bSoKP6tj43hhYeT7OJjqgWAzVQetRkxRIbJBqOFe5yMcfhwAIEGp2i-pzjirhB6cYJ0XkKbPJIjIyzUjty1lHr3CXzJQTLNlQZ6JnOIK_cvRt' },
-    { id: 'att-2', name: 'db_schema.jpg', size: '840 KB', type: 'image', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmSZMhHFJPrmkepkUCBpaNfKWCmsFsWe4ySvOygd16ansr6zF8EPMjUmCjZuz7u1Z5w9yL619kolwk8pc55xhLx80kMqxFI6EnyeNBjpplcy8NK66ePMGsY_PlnXcnegoQ8P96HB9-p1R2a2ubZoGfgZ8lY14wd3lHFmmr6BNNqBGinje4zj-51q2SavHBVYlMb8BVSwym5kUxgkG1CGCHRYzv2mNAVTq8ucM5--fIO52aIfefiS-BxWRK30o_5pEQJdJ03SU80mH6' },
-    { id: 'att-3', name: 'api_spec_final.pdf', size: '3.4 MB', type: 'document', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB_OpFNHphFa91I02KVosm-6ObwlHZr6pYUDHGUtTd4PkvWskwlAXJlfj2Lwiv5cb8ZqoVtT2sy4ywBfBDdm3Q53bizz08NqYWJWNbCUq1CtPLxl_R42ucdmdAJAa7PwYvbAR-Ch2jGtw4-b14vCqKiFqPe6YTDJvDVWF2drlqkFbpB_h613oT_G6w6eUh7ZZs1KQPLLJfYkM3g5hxZSfJU-gKQ7e_BKYu5QXldBxcEkVqa0ctFyRLK4O2MToLO69uRVg8WwZTxliPl' },
-    { id: 'att-4', name: 'auth_middleware.ts', size: '4 KB', type: 'snippet', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAO-34cLmxj2D117O5Z9JxXYLDzH9gNLQXsqQSESrQP5Yq1TBuFlAb92EVixtyX3DaScY7tA8Npe71SIN4Y8PUIdFEXg8N0-KkHhSKtCOjAUTb9LT5TPJYvxsagoYW5Qet_yWaR-sgb_Ks7BsOR9jbD36TejDIKQLWC8QxeOXx5wbyv_m3omw_Lah5bEj3Cd1vHJSCsY7SmJ-CkB8JkHOpsObeUryhjMTywpGjcBtIaGzCMhtiaEouYVjSXuGciG19XX7qWH3mXallE', active: true }
-  ]);
+  // Initial Attachments list fetched from Supabase
+  const [attachments, setAttachments] = useState<(AttachmentItem & { storagePath?: string })[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,25 +155,207 @@ export default function NoteEditorView({
     }, 50);
   };
 
-  // Upload Simulation
+  // Fetch attachments from database and create signed URLs
+  const fetchAttachments = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id || user.id;
+      if (!currentUserId) {
+        setAttachments([]);
+        return;
+      }
+
+      const { data: dbAttachments, error: dbError } = await supabase
+        .from('attachments')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false });
+
+      if (dbError) {
+        // If table doesn't exist yet, simply fall back to empty state
+        console.warn('Error or missing attachments table in Supabase:', dbError);
+        setAttachments([]);
+        return;
+      }
+
+      if (dbAttachments && dbAttachments.length > 0) {
+        const mappedAttachments = await Promise.all(
+          dbAttachments.map(async (att: any) => {
+            try {
+              const { data: signedData, error: signedError } = await supabase
+                .storage
+                .from('app-files')
+                .createSignedUrl(att.storage_path, 3600);
+
+              return {
+                id: att.id,
+                name: att.name,
+                size: att.size,
+                type: att.type as 'image' | 'document' | 'snippet',
+                url: signedData?.signedUrl || '',
+                storagePath: att.storage_path
+              };
+            } catch (err) {
+              console.error('Error generating signed URL:', err);
+              return {
+                id: att.id,
+                name: att.name,
+                size: att.size,
+                type: att.type as 'image' | 'document' | 'snippet',
+                url: '',
+                storagePath: att.storage_path
+              };
+            }
+          })
+        );
+        setAttachments(mappedAttachments);
+      } else {
+        setAttachments([]);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching attachments:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttachments();
+  }, [activeNote.id, user.id]);
+
+  // Upload Handling with Supabase Storage & Profiles/Attachments Table Integration
   const handleFileClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  const processUploadedFile = (file: File) => {
-    const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
-    const newAttachment: AttachmentItem = {
-      id: `att-${Date.now()}`,
-      name: file.name,
-      size: `${sizeInMB} MB`,
-      type: file.type.includes('image') ? 'image' : file.name.endsWith('.ts') || file.name.endsWith('.js') ? 'snippet' : 'document',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDoW5W3IooMBL00_Nml2cBTfZ4fvB8BbGU-aaX1_evJr0eNcYGmd6uEmnxFlWPGuUBB7ARRUeuf5CLRGGC7tP_xgnvrritNxNJOVCVvmXvavZHiZx7xyI5kvweTWEsaFNWaXveMT7fNaXI2XJiElthE-DBcQkAUmRoaUxZl04K2mx06Z5DAdCl1Gq837G4WmO5qszmuF_vzx-7aM9zXkKHXtG11UPojaamsbeCAi6Qw1eF11wXL_zlYL4OV-d8FGfXwTab9220M5B22',
-    };
+  const processUploadedFile = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id || user.id;
 
-    setAttachments([newAttachment, ...attachments]);
-    alert(`File processed into workspace Attachments:\nFilename: ${file.name}\nSize: ${sizeInMB} MB\nType: ${file.type}`);
+      if (!currentUserId) {
+        alert("로그인이 필요합니다. 파일을 업로드하려면 먼저 로그인해 주세요.");
+        return;
+      }
+
+      // Naming format constraints: ${auth.uid()}/notes/${itemId}/${uuid}.${extension}
+      const featureName = 'notes';
+      const itemId = activeNote.id || 'general';
+      const uuidStr = Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+      const extension = file.name.split('.').pop() || 'bin';
+      const storagePath = `${currentUserId}/${featureName}/${itemId}/${uuidStr}.${extension}`;
+
+      // 1. Upload to Supabase Storage Bucket ('app-files')
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('app-files')
+        .upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Error uploading to private store bucket:', uploadError);
+        alert('파일 스토리지 업로드 실패: ' + uploadError.message);
+        return;
+      }
+
+      const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+      const displaySize = `${sizeInMB} MB`;
+      const fileType = file.type.includes('image') 
+        ? 'image' 
+        : (file.name.endsWith('.ts') || file.name.endsWith('.js') || file.name.endsWith('.tsx') || file.name.endsWith('.json')) ? 'snippet' : 'document';
+
+      // 2. Insert record details in database table "attachments"
+      const newDbRecord = {
+        user_id: currentUserId,
+        note_id: activeNote.id !== 'temp-loading' ? activeNote.id : null,
+        name: file.name,
+        size: displaySize,
+        type: fileType,
+        storage_path: storagePath
+      };
+
+      const { data: dbData, error: dbError } = await supabase
+        .from('attachments')
+        .insert([newDbRecord])
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Error record database inserts:', dbError);
+        // Rollback uploaded file if DB references insert failed to avoid orphaned data
+        await supabase.storage.from('app-files').remove([storagePath]);
+        alert('첨부파일 DB 정보 저장 실패: ' + dbError.message);
+        return;
+      }
+
+      // 3. Request a signed URL for client previewing
+      const { data: signedData } = await supabase
+        .storage
+        .from('app-files')
+        .createSignedUrl(storagePath, 3600);
+
+      const newAttachment = {
+        id: dbData.id,
+        name: dbData.name,
+        size: dbData.size,
+        type: dbData.type as 'image' | 'document' | 'snippet',
+        url: signedData?.signedUrl || '',
+        storagePath: dbData.storage_path
+      };
+
+      setAttachments(prev => [newAttachment, ...prev]);
+    } catch (err: any) {
+      console.error('File operation processing error:', err);
+      alert('파일 처리 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (att: AttachmentItem & { storagePath?: string }, e: React.MouseEvent) => {
+    e.stopPropagation(); // Avoid appending attachment tag on delete click
+
+    if (!window.confirm(`첨부파일 "${att.name}" 데이터를 영구적으로 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      // 1. Storage bucket delete
+      if (att.storagePath) {
+        const { error: storageError } = await supabase
+          .storage
+          .from('app-files')
+          .remove([att.storagePath]);
+
+        if (storageError) {
+          console.error('Error removing file storage bucket:', storageError);
+        }
+      }
+
+      // 2. DB table rows delete
+      const { error: dbError } = await supabase
+        .from('attachments')
+        .delete()
+        .eq('id', att.id);
+
+      if (dbError) {
+        console.error('Error removing attachment DB row rows:', dbError);
+        alert('첨부파일 데이터베이스 삭제 실패: ' + dbError.message);
+        return;
+      }
+
+      // 3. State update
+      setAttachments(prev => prev.filter(item => item.id !== att.id));
+    } catch (err: any) {
+      console.error('Deletion error occurred:', err);
+      alert('파일 삭제 과정 중 오류 발생: ' + err.message);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -465,7 +646,7 @@ export default function NoteEditorView({
         </div>
 
         {/* Attachment collection lists */}
-        <div className="p-3 flex flex-col gap-1 flex-1 overflow-y-auto">
+        <div className="p-3 flex flex-col gap-1 flex-1 overflow-y-auto select-none">
           
           {/* Drag block overlay descriptor */}
           {isDragOver && (
@@ -474,79 +655,133 @@ export default function NoteEditorView({
             </div>
           )}
 
-          {/* Segment: IMAGES */}
-          <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-2">Images</div>
-          
-          {attachments.filter(a => a.type === 'image').map(att => (
-            <div 
-              key={att.id}
-              onClick={() => handleAttachmentClick(att)}
-              className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-[#121215] cursor-pointer transition-colors group"
-              title="Click to insert reference tag"
-            >
-              <div className="w-7 h-7 rounded border border-[#27272a] bg-[#121215] overflow-hidden shrink-0 flex items-center justify-center">
-                <img 
-                  src={att.url} 
-                  alt={att.name} 
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
-                />
-              </div>
-              <div className="flex flex-col overflow-hidden leading-none">
-                <span className="text-xs text-[#a1a1aa] group-hover:text-white truncate font-medium max-w-[120px]">{att.name}</span>
-                <span className="text-[9px] text-[#71717a] font-mono mt-0.5">{att.size}</span>
-              </div>
+          {/* Loading attachments indicator */}
+          {isLoading ? (
+            <div className="py-8 text-center text-[#71717a] flex flex-col items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-brand-primary" />
+              <span className="text-[10px] uppercase tracking-wider font-semibold">Loading media...</span>
             </div>
-          ))}
+          ) : (
+            <>
+              {/* Is currently uploading metadata feedback */}
+              {isUploading && (
+                <div className="bg-brand-primary/5 border border-brand-primary/20 p-2.5 rounded-lg text-center text-[10px] text-brand-primary animate-pulse mb-3">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto mb-1" />
+                  Storing file...
+                </div>
+              )}
 
-          {/* Segment: DOCUMENTS */}
-          <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">Documents</div>
-          {attachments.filter(a => a.type === 'document').map(att => (
-            <div 
-              key={att.id}
-              onClick={() => handleAttachmentClick(att)}
-              className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-[#121215] cursor-pointer transition-colors group"
-              title="Click to insert file reference"
-            >
-              <div className="w-7 h-7 rounded border border-[#27272a] bg-[#121215] overflow-hidden shrink-0 flex items-center justify-center text-[#71717a] group-hover:text-brand-primary">
-                <File className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col overflow-hidden leading-none">
-                <span className="text-xs text-[#a1a1aa] group-hover:text-white truncate font-medium max-w-[120px]">{att.name}</span>
-                <span className="text-[9px] text-[#71717a] font-mono mt-0.5">{att.size}</span>
-              </div>
-            </div>
-          ))}
+              {/* Segment: IMAGES */}
+              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-2">Images</div>
+              
+              {attachments.filter(a => a.type === 'image').length === 0 ? (
+                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">No images uploaded</div>
+              ) : (
+                attachments.filter(a => a.type === 'image').map(att => (
+                  <div 
+                    key={att.id}
+                    onClick={() => handleAttachmentClick(att)}
+                    className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-[#121215] cursor-pointer transition-colors group"
+                    title="Click to insert reference tag"
+                  >
+                    <div className="w-7 h-7 rounded border border-[#27272a] bg-[#121215] overflow-hidden shrink-0 flex items-center justify-center">
+                      <img 
+                        src={att.url} 
+                        alt={att.name} 
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                      />
+                    </div>
+                    <div className="flex flex-col overflow-hidden leading-none flex-1">
+                      <span className="text-xs text-[#a1a1aa] group-hover:text-white truncate font-medium max-w-[100px]">{att.name}</span>
+                      <span className="text-[9px] text-[#71717a] font-mono mt-0.5">{att.size}</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteAttachment(att, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#f43f5e] hover:bg-[#27272a]/80 hover:text-red-400 rounded cursor-pointer shrink-0"
+                      title="Delete attachment"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
 
-          {/* Segment: SNIPPETS */}
-          <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">Snippets</div>
-          {attachments.filter(a => a.type === 'snippet').map(att => (
-            <div 
-              key={att.id}
-              onClick={() => handleAttachmentClick(att)}
-              className={`flex items-center gap-2.5 p-1.5 rounded-lg cursor-pointer transition-colors relative overflow-hidden ${
-                att.active 
-                  ? 'bg-[#18181b] border border-[#27272a]' 
-                  : 'hover:bg-[#121215] group'
-              }`}
-              title="Click to insert snippet tag"
-            >
-              {att.active && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand-primary"></div>}
-              <div className={`w-7 h-7 rounded border overflow-hidden shrink-0 flex items-center justify-center ${
-                att.active 
-                  ? 'border-brand-primary/25 bg-[#121215] text-brand-primary' 
-                  : 'border-[#27272a] bg-[#121215] text-[#71717a] group-hover:text-brand-primary'
-              }`}>
-                <FileCode className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col overflow-hidden leading-none">
-                <span className={`text-xs truncate font-medium max-w-[120px] ${
-                  att.active ? 'text-white' : 'text-[#a1a1aa] group-hover:text-white'
-                }`}>{att.name}</span>
-                <span className="text-[9.5px] text-brand-primary font-semibold font-mono mt-0.5">Active</span>
-              </div>
-            </div>
-          ))}
+              {/* Segment: DOCUMENTS */}
+              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">Documents</div>
+              {attachments.filter(a => a.type === 'document').length === 0 ? (
+                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">No documents uploaded</div>
+              ) : (
+                attachments.filter(a => a.type === 'document').map(att => (
+                  <div 
+                    key={att.id}
+                    onClick={() => handleAttachmentClick(att)}
+                    className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-[#121215] cursor-pointer transition-colors group"
+                    title="Click to insert file reference"
+                  >
+                    <div className="w-7 h-7 rounded border border-[#27272a] bg-[#121215] overflow-hidden shrink-0 flex items-center justify-center text-[#71717a] group-hover:text-brand-primary">
+                      <File className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col overflow-hidden leading-none flex-1">
+                      <span className="text-xs text-[#a1a1aa] group-hover:text-white truncate font-medium max-w-[100px]">{att.name}</span>
+                      <span className="text-[9px] text-[#71717a] font-mono mt-0.5">{att.size}</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteAttachment(att, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#f43f5e] hover:bg-[#27272a]/80 hover:text-red-400 rounded cursor-pointer shrink-0"
+                      title="Delete attachment"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+
+              {/* Segment: SNIPPETS */}
+              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">Snippets</div>
+              {attachments.filter(a => a.type === 'snippet').length === 0 ? (
+                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">No code snippets uploaded</div>
+              ) : (
+                attachments.filter(a => a.type === 'snippet').map(att => {
+                  const isActive = att.id === 'att-4'; // keep reference pattern matching original mock active block behavior if useful
+                  return (
+                    <div 
+                      key={att.id}
+                      onClick={() => handleAttachmentClick(att)}
+                      className={`flex items-center gap-2.5 p-1.5 rounded-lg cursor-pointer transition-colors relative overflow-hidden group ${
+                        isActive 
+                          ? 'bg-[#18181b] border border-[#27272a]' 
+                          : 'hover:bg-[#121215]'
+                      }`}
+                      title="Click to insert snippet tag"
+                    >
+                      {isActive && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand-primary"></div>}
+                      <div className={`w-7 h-7 rounded border overflow-hidden shrink-0 flex items-center justify-center ${
+                        isActive 
+                          ? 'border-brand-primary/25 bg-[#121215] text-brand-primary' 
+                          : 'border-[#27272a] bg-[#121215] text-[#71717a] group-hover:text-brand-primary'
+                      }`}>
+                        <FileCode className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col overflow-hidden leading-none flex-1">
+                        <span className={`text-xs truncate font-medium max-w-[100px] ${
+                          isActive ? 'text-white' : 'text-[#a1a1aa] group-hover:text-white'
+                        }`}>{att.name}</span>
+                        {isActive && <span className="text-[9.5px] text-brand-primary font-semibold font-mono mt-0.5">Active</span>}
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteAttachment(att, e)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#f43f5e] hover:bg-[#27272a]/80 hover:text-red-400 rounded cursor-pointer shrink-0"
+                        title="Delete attachment"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </>
+          )}
 
         </div>
 

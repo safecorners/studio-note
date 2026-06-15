@@ -258,7 +258,8 @@ export default function App() {
           isAuthenticated: true,
           email: session.user.email || '',
           fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-          plan: 'pro'
+          plan: 'pro',
+          id: session.user.id
         });
         setCurrentView(prev => (prev === 'landing' || prev === 'login') ? 'dashboard' : prev);
       } else {
@@ -281,7 +282,8 @@ export default function App() {
           isAuthenticated: true,
           email: session.user.email || '',
           fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-          plan: 'pro'
+          plan: 'pro',
+          id: session.user.id
         });
       } else {
         setCurrentUser({

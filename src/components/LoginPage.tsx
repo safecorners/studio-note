@@ -89,6 +89,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
             email: data.user.email || email,
             fullName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
             plan: 'pro', // Default Pro setup as in the original mock
+            id: data.user.id,
           };
           onLoginSuccess(user);
           onNavigate('dashboard');
@@ -147,6 +148,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
               email: currentSession.user.email || '',
               fullName: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
               plan: 'pro',
+              id: currentSession.user.id,
             };
             onLoginSuccess(user);
             onNavigate('dashboard');
