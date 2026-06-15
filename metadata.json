@@ -1,0 +1,6 @@
+{
+  "name": "Escualo",
+  "description": "Precision in Darkness - Developer-grade markdown notes, lightning fast, purely functional, and designed for deep work.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
