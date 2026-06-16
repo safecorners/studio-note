@@ -33,20 +33,20 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
               Escualo
             </button>
             <div className="hidden md:flex items-center gap-6">
-              <a href="#features" className="text-sm font-medium text-[#a1a1aa] hover:text-white transition-colors duration-200">Features</a>
+              <a href="#features" className="text-sm font-medium text-[#a1a1aa] hover:text-white transition-colors duration-200">주요 기능</a>
               <button 
                 id="link-pricing" 
                 onClick={() => onNavigate('pricing')} 
                 className="text-sm font-medium text-[#a1a1aa] hover:text-white transition-colors duration-200 cursor-pointer"
               >
-                Pricing
+                요금제
               </button>
               <button 
                 id="link-docs" 
                 onClick={() => onNavigate('dashboard')} 
                 className="text-sm font-medium text-[#a1a1aa] hover:text-white transition-colors duration-200 cursor-pointer"
               >
-                Dashboard
+                대시보드
               </button>
             </div>
           </div>
@@ -57,7 +57,7 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa] group-focus-within:text-brand-primary transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search documentation... (Press Enter)" 
+                placeholder="문서 검색... (Enter 키 입력)" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-[#121215] border border-[#27272a] rounded-lg py-1.5 pl-10 pr-4 text-xs text-white placeholder:text-[#71717a] focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all font-mono"
@@ -72,14 +72,14 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
               onClick={() => onNavigate('login')} 
               className="font-medium text-sm text-[#a1a1aa] hover:text-white transition-colors duration-200 cursor-pointer"
             >
-              Login
+              로그인
             </button>
             <button 
               id="signup-btn-nav" 
               onClick={() => onNavigate('login')} 
               className="bg-[#a78bfa] hover:bg-[#bbf7d0] hover:text-[#001a12] text-[#0a0012] font-semibold text-xs px-4 py-2 rounded-lg transition-all duration-200 shadow-[0_0_15px_rgba(167,139,250,0.15)] hover:shadow-[0_0_20px_rgba(167,139,250,0.3)] cursor-pointer active:scale-95"
             >
-              Get Started
+              시작하기
             </button>
           </div>
         </div>
@@ -95,16 +95,16 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
           {/* Release status indicator */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121215] border border-[#27272a] mb-8 text-xs font-mono text-[#a1a1aa]">
             <span className="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span>
-            v2.0 is now live
+            v2.0 정식 출시
           </div>
 
           {/* Core branding title */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-none mb-6">
-            Precision in <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-[#c4b5fd] to-white font-black">Darkness</span>
+            침묵의 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-[#c4b5fd] to-white font-black">속도</span>
           </h1>
 
           <p className="text-lg md:text-xl text-[#a1a1aa] max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            Developer-grade markdown notes. Lightning fast, purely functional, and designed for deep work.
+            극한의 속도, 순수한 기능성, 몰입을 방해하지 않는 디자인.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-sd mb-16">
@@ -113,7 +113,7 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
               onClick={() => onNavigate('login')}
               className="w-full sm:w-auto bg-brand-primary text-[#0a0012] font-semibold py-3 px-8 rounded-lg transition-all duration-200 hover:scale-105 shadow-[0_0_20px_rgba(167,139,250,0.2)] flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
-              Get Started
+              시작하기
               <ArrowRight className="w-4 h-4" />
             </button>
             <button 
@@ -122,7 +122,7 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
               className="w-full sm:w-auto bg-transparent border border-[#52525b] hover:border-[#a1a1aa] text-white hover:bg-[#121215] font-medium py-3 px-8 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Terminal className="w-4 h-4 text-brand-accent" />
-              View Notes Workspace
+              노트 워크스페이스 보기
             </button>
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
               <div className="w-3 h-3 rounded-full bg-[#27272a]"></div>
               <div className="w-3 h-3 rounded-full bg-[#18181b]"></div>
               <div className="ml-4 font-mono text-xs text-[#71717a] truncate max-w-[200px] sm:max-w-none">escualo/notes/architecture.md</div>
-              <span className="ml-auto text-[10px] bg-brand-primary/10 text-brand-primary px-2 py-0.5 rounded font-mono">Interactive Demo</span>
+              <span className="ml-auto text-[10px] bg-brand-primary/10 text-brand-primary px-2 py-0.5 rounded font-mono">대화형 데모</span>
             </div>
 
             {/* Simulated Note editor text lines */}
@@ -175,9 +175,9 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
         <div className="max-w-6xl mx-auto">
           {/* Header section text */}
           <div className="mb-16">
-            <h2 className="text-3xl font-bold text-white tracking-tight mb-4">Uncompromising Functionality</h2>
+            <h2 className="text-3xl font-bold text-white tracking-tight mb-4">타협 없는 최고의 기능</h2>
             <p className="text-base text-[#a1a1aa] max-w-xl font-light">
-              Everything you need to map your thoughts, cleanly integrated into a near-black slate canvas.
+              생각을 시각화하고 정리하는 데 필요한 모든 도구를 어두운 네이비색 캔버스 안에 완벽하게 통합했습니다.
             </p>
           </div>
 
@@ -189,9 +189,9 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                 <div className="w-10 h-10 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary mb-4 group-hover:scale-110 transition-transform">
                   <Cloud className="w-5 h-5 text-brand-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">End-to-End Cloud Sync</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">종단간 클라우드 동기화</h3>
                 <p className="text-sm text-[#a1a1aa] leading-relaxed font-light">
-                  Your notes are instantly available across all devices. Changes propagate in milliseconds over web sockets, ensuring you never lose a fleeting thought.
+                  작성한 노트는 모든 기기에서 즉시 동기화됩니다. 웹소켓을 통한 밀리초 단위 동기화로 찰나의 영감도 결코 잃어버리지 않습니다.
                 </p>
               </div>
 
@@ -233,15 +233,15 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                 <div className="w-10 h-10 rounded-lg bg-brand-accent/10 flex items-center justify-center text-brand-accent mb-4 group-hover:scale-110 transition-transform">
                   <FileText className="w-5 h-5 text-brand-accent" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Native Markdown</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">기본 마크다운 지원</h3>
                 <p className="text-sm text-[#a1a1aa] leading-relaxed font-light">
-                  First-class support for Github-flavored markdown tags. Write complex nested code, markdown tables, checklist macros, and math formulas inline.
+                  GitHub 스타일 마크다운 태그를 철저히 지원합니다. 복잡한 코드 블록, 테이블, 체크리스트, 수식 매크로 등을 자유롭게 인라인으로 작성해 보세요.
                 </p>
               </div>
               <div className="mt-8 bg-[#09090b] border border-[#27272a] p-3 rounded-lg text-[11px] font-mono text-[#71717a]">
-                <span className="text-white">**Bold text**</span> <br/>
+                <span className="text-white">**굵은 텍스트**</span> <br/>
                 <span className="text-brand-accent">`const app = express();`</span><br/>
-                <span className="text-[#a1a1aa] italic">- [x] Finalize architectural spec</span>
+                <span className="text-[#a1a1aa] italic">- [x] 아키텍처 사양 구체화 완료</span>
               </div>
             </div>
 
@@ -251,15 +251,15 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                 <div className="w-10 h-10 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary mb-4 group-hover:scale-110 transition-transform">
                   <Paperclip className="w-5 h-5 text-brand-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">File Attachments</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">파일 첨부</h3>
                 <p className="text-sm text-[#a1a1aa] leading-relaxed font-light">
-                  Drag and drop code files, images, PDFs, and metadata parameters directly into notes. Rendered neatly inline with customizable labels.
+                  코드 파일, 이미지, PDF, 메타데이터 변수들을 드래그 앤 ド롭으로 노트에 직접 첨부할 수 있습니다. 각 첨부 파일은 인라인 태그로 깔끔하게 렌더링됩니다.
                 </p>
               </div>
 
               <div className="mt-8 border border-dashed border-[#27272a] hover:border-brand-primary rounded-lg py-4 px-2 text-center text-xs text-[#71717a] bg-[#09090b] transition-colors">
-                <span className="text-brand-primary block mb-1 font-semibold">Drop dynamic code file</span>
-                or click to browse
+                <span className="text-brand-primary block mb-1 font-semibold">동적 코드 파일을 여기에 드롭</span>
+                또는 클릭하여 브라우즈
               </div>
             </div>
 
@@ -269,9 +269,9 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                 <div className="w-10 h-10 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary mb-4 group-hover:scale-110 transition-transform">
                   <Workflow className="w-5 h-5 text-brand-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Knowledge Graph Linkages</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">지식 그래프 연결 관계</h3>
                 <p className="text-sm text-[#a1a1aa] leading-relaxed font-light">
-                  Visualize connections between distinct files. Understand your custom notes catalog at a macro scale with fluid force-directed linkage lines.
+                  서로 다른 노트 파일 사이의 관계를 시각화하세요. 동적인 3D 힘 지향 그래프 연결망을 통해 지식 카탈로그를 거시적인 시선으로 직접 이해할 수 있습니다.
                 </p>
               </div>
 
@@ -315,11 +315,11 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
             <span className="text-xs text-[#71717a]">© 2026 Escualo. Inspired by Obsidian. Crafted with precision.</span>
           </div>
           <div className="flex flex-wrap justify-center gap-6 text-xs text-[#71717a]">
-            <a href="#" className="hover:text-brand-primary transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-brand-primary transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-brand-primary transition-colors">Workspace Status</a>
+            <a href="#" className="hover:text-brand-primary transition-colors">개인정보 처리방침</a>
+            <a href="#" className="hover:text-brand-primary transition-colors">이용 약관</a>
+            <a href="#" className="hover:text-brand-primary transition-colors">네트워크 운영 상태</a>
             <a href="#" className="hover:text-brand-primary transition-colors">Twitter</a>
-            <a href="#" className="hover:text-brand-primary transition-colors">GitHub Repository</a>
+            <a href="#" className="hover:text-brand-primary transition-colors">GitHub 저장소</a>
           </div>
         </div>
       </footer>

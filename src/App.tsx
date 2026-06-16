@@ -7,6 +7,7 @@ import LoginPage from './components/LoginPage';
 import DashboardView from './components/DashboardView';
 import PaymentConfirmView from './components/PaymentConfirmView';
 import NoteEditorView from './components/NoteEditorView';
+import { Sparkles, AlertTriangle } from 'lucide-react';
 
 // Initial master array of mock Obsidian notes
 const DEFAULT_NOTES: NoteItem[] = [
@@ -50,6 +51,7 @@ export default function App() {
     fullName: '',
     plan: 'free'
   });
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Handle OAuth callback popup closing
   useEffect(() => {
@@ -383,6 +385,25 @@ export default function App() {
       return;
     }
 
+    // Free plan maximum 3 notes limit check with live DB verification
+    if (currentUser.plan === 'free') {
+      try {
+        const { count, error: countError } = await supabase
+          .from('notes')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', session.user.id);
+
+        if (countError) {
+          console.error('Error querying note limit count:', countError);
+        } else if (count !== null && count >= 3) {
+          setShowUpgradeModal(true);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to validate note limit:', err);
+      }
+    }
+
     const newDbNote = {
       user_id: session.user.id,
       title: 'New Workspace Document',
@@ -501,6 +522,39 @@ export default function App() {
           onLogout={handleLogout}
           onCreateNewNote={handleCreateNewNote}
         />
+      )}
+
+      {showUpgradeModal && (
+        <div id="upgrade-limit-modal" className="fixed inset-0 bg-black/85 backdrop-blur-xs flex items-center justify-center z-[9999] p-4">
+          <div className="bg-[#121215] border border-[#27272a] rounded-xl max-w-sm w-full p-6 shadow-2xl relative select-none">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary mb-4">
+                <Sparkles className="w-6 h-6 animate-pulse" />
+              </div>
+              <h3 className="text-base font-semibold text-white tracking-tight mb-2">Plan Limit Reached</h3>
+              <p className="text-[#a1a1aa] text-xs leading-relaxed mb-6">
+                Free plan limit reached. Upgrade to Pro to create unlimited notes.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2.5 w-full">
+                <button 
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    handleNav('pricing');
+                  }}
+                  className="flex-grow bg-brand-primary text-[#0a0012] font-semibold text-xs py-2 px-4 rounded-lg hover:opacity-95 transition-opacity cursor-pointer text-center"
+                >
+                  Upgrade to Pro
+                </button>
+                <button 
+                  onClick={() => setShowUpgradeModal(false)}
+                  className="flex-grow bg-[#1c1c1f] text-[#e4e4e7] border border-[#27272a] font-medium text-xs py-2 px-4 rounded-lg hover:bg-[#27272a] transition-all cursor-pointer text-center"
+                >
+                  Stay on Free
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -29,16 +29,16 @@ export default function PaymentConfirmView({ onNavigate }: PaymentConfirmViewPro
     const receiptText = `
 ---------------------------------------------
           ESCUALO NOTE CLUSTERS INC.          
-                 RECEIPT                     
+                 영 수 증                     
 ---------------------------------------------
-Order Number: #${simulatedOrder.orderNumber}
-Date:         ${simulatedOrder.date}
-Plan:         ${simulatedOrder.planName}
-Billing Cycle:Annual (Billed continuous)
-Payment:      Card Auth (${simulatedOrder.paymentMethod})
-Total Paid:   ${simulatedOrder.totalPaid}
+주문 번호:   #${simulatedOrder.orderNumber}
+결제 일시:   ${simulatedOrder.date}
+요금제:      ${simulatedOrder.planName}
+청구 주기:   연간 (지속 청구)
+결제 수단:   카드 승인 (${simulatedOrder.paymentMethod})
+총 결제액:   ${simulatedOrder.totalPaid}
 ---------------------------------------------
-Thank you for your purchase. Precision in Darkness.
+구매해 주셔서 감사합니다. 침묵의 속도.
 ---------------------------------------------
     `;
     alert(receiptText);
@@ -59,8 +59,8 @@ Thank you for your purchase. Precision in Darkness.
         </div>
 
         {/* Lead Headline title */}
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">Payment Confirmation</h1>
-        <p className="text-[#a1a1aa] mb-8 text-xs font-light">Thank you for your purchase. Your workspace is synced and ready.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">결제가 완료되었습니다</h1>
+        <p className="text-[#a1a1aa] mb-8 text-xs font-light">구매해 주셔서 감사합니다. 워크스페이스 동기화가 완료되어 바로 사용하실 수 있습니다.</p>
 
         {/* Structured receipt card */}
         <div className="w-full bg-[#121215] border border-[#27272a] rounded-xl p-6 text-left mb-8 shadow-2xl relative">
@@ -72,36 +72,36 @@ Thank you for your purchase. Precision in Darkness.
             </div>
             <div>
               <h3 className="font-semibold text-white text-xs tracking-tight">{simulatedOrder.planName}</h3>
-              <p className="text-[10px] text-[#71717a] font-medium uppercase font-mono">Billed Annually</p>
+              <p className="text-[10px] text-[#71717a] font-medium uppercase font-mono">연간 청구됨</p>
             </div>
             <span className="ml-auto flex items-center gap-1 bg-[#34d399]/15 text-[#34d399] text-[9px] font-mono px-2 py-0.5 rounded font-black border border-[#34d399]/10">
               <ShieldCheck className="w-3 h-3" />
-              <span>PAID</span>
+              <span>결제 완료</span>
             </span>
           </div>
 
           {/* Details lines */}
           <div className="space-y-3.5 text-xs">
             <div className="flex justify-between items-center">
-              <span className="text-[#a1a1aa] font-sans">Order Number</span>
+              <span className="text-[#a1a1aa] font-sans">주문 번호</span>
               <span className="text-white font-mono text-xs">#{simulatedOrder.orderNumber}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[#a1a1aa] font-sans">Date of Transaction</span>
+              <span className="text-[#a1a1aa] font-sans">결제 일시</span>
               <span className="text-white font-sans">{simulatedOrder.date}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[#a1a1aa] font-sans">Payment Method</span>
+              <span className="text-[#a1a1aa] font-sans">결제 수단</span>
               <span className="flex items-center gap-1.5 text-white font-sans">
                 <CreditCard className="w-3.5 h-3.5 text-[#5b21b6]" />
-                <span>Card Ending {simulatedOrder.paymentMethod}</span>
+                <span>카드 번호 {simulatedOrder.paymentMethod}</span>
               </span>
             </div>
           </div>
 
           {/* total aggregate price panel */}
           <div className="mt-6 pt-4 border-t border-[#27272a] flex justify-between items-center">
-            <span className="text-[#a1a1aa] font-medium text-xs font-sans">Total Paid</span>
+            <span className="text-[#a1a1aa] font-medium text-xs font-sans">총 결제 금액</span>
             <span className="text-2xl font-bold tracking-tight text-white font-sans">{simulatedOrder.totalPaid}</span>
           </div>
         </div>
@@ -113,7 +113,7 @@ Thank you for your purchase. Precision in Darkness.
             onClick={() => onNavigate('dashboard')}
             className="flex-1 bg-brand-primary hover:bg-[#bbf7d0] text-[#0a0012] font-semibold transition-all py-3 px-6 rounded-lg text-xs leading-none flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
           >
-            Go to Dashboard
+            대시보드로 이동
             <ExternalLink className="w-3.5 h-3.5" />
           </button>
           <button 
@@ -122,13 +122,13 @@ Thank you for your purchase. Precision in Darkness.
             className="flex-1 bg-transparent border border-[#27272a] hover:border-[#a1a1aa] text-[#fafafa] hover:bg-[#121215] transition-all py-3 px-6 rounded-lg text-xs font-semibold leading-none flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            Receipt
+            영수증 출력
           </button>
         </div>
 
         {/* safety disclaimer feedback */}
         <span className="text-[10px] text-[#71717a] mt-8 select-none">
-          Secure cloud sync initialized. Obsidian configs compatible.
+          보안 클라우드 동기화 완료. 옵시디언 설정과 호환됩니다.
         </span>
 
       </main>

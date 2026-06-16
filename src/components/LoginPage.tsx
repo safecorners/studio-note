@@ -65,7 +65,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
           await supabase.auth.signOut();
         }
 
-        setSuccessMessage('Your account has been created. Please check your email and verify your address before logging in.');
+        setSuccessMessage('계정이 생성되었습니다. 로그인하기 전에 이메일을 확인하고 주소를 인증해 주세요.');
         setActiveTab('login');
         setPassword('');
         setFullName('');
@@ -247,7 +247,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
             </p>
             <footer className="text-sm text-[#a1a1aa] font-medium flex items-center gap-3">
               <div className="w-8 h-px bg-[#52525b]"></div>
-              System Architecture & Log Engine
+              시스템 아키텍처 및 로그 엔진
             </footer>
           </blockquote>
         </div>
@@ -271,12 +271,12 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
           {/* Title Header text */}
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-white font-sans" id="form-title">
-              {activeTab === 'login' ? 'Welcome back' : 'Create an account'}
+              {activeTab === 'login' ? '다시 오신 것을 환영합니다' : '계정 만들기'}
             </h1>
             <p className="text-sm text-[#a1a1aa]" id="form-subtitle">
               {activeTab === 'login' 
-                ? 'Enter your credentials to access your note archives.' 
-                : 'Get started with Escualo note clusters today.'}
+                ? '노트 보관함에 접근하려면 정보를 입력해 주세요.' 
+                : '지금 에스쿠알로 노트 클러스터를 시작해 보세요.'}
             </p>
           </div>
 
@@ -291,7 +291,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
               }`}
               onClick={() => handleTabChange('login')}
             >
-              Log In
+              로그인
             </button>
             <button 
               type="button"
@@ -302,7 +302,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
               }`}
               onClick={() => handleTabChange('signup')}
             >
-              Sign Up
+               회원가입
             </button>
           </div>
 
@@ -326,7 +326,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
             {/* Full Name input block (Sign Up only) */}
             {activeTab === 'signup' && (
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[#a1a1aa]" htmlFor="fullname">Full Name</label>
+                <label className="block text-xs font-semibold text-[#a1a1aa]" htmlFor="fullname">성함</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#71717a]">
                     <User className="w-4 h-4" />
@@ -334,7 +334,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
                   <input 
                     id="fullname" 
                     type="text" 
-                    placeholder="Jane Doe" 
+                    placeholder="홍길동" 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
@@ -346,7 +346,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
 
             {/* Email field */}
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[#a1a1aa]" htmlFor="email">Email address</label>
+              <label className="block text-xs font-semibold text-[#a1a1aa]" htmlFor="email">이메일 주소</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#71717a]">
                   <Mail className="w-4 h-4" />
@@ -367,14 +367,14 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
             {/* Password field */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-[#a1a1aa]" htmlFor="password">Password</label>
+                <label className="text-xs font-semibold text-[#a1a1aa]" htmlFor="password">비밀번호</label>
                 {activeTab === 'login' && (
                   <button 
                     type="button" 
-                    onClick={() => { setErrorMessage('Password reset token generated and simulated on local systems.'); }}
+                    onClick={() => { setErrorMessage('비밀번호 재설정 토큰이 로컬 시스템에 시뮬레이션되어 생성되었습니다.'); }}
                     className="text-[11px] text-brand-primary hover:underline cursor-pointer"
                   >
-                    Forgot password?
+                    비밀번호를 잊으셨나요?
                   </button>
                 )}
               </div>
@@ -405,7 +405,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
                 <span>처리하는 중...</span>
               ) : (
                 <>
-                  {activeTab === 'login' ? 'Sign in' : 'Create Account'}
+                  {activeTab === 'login' ? '로그인' : '계정 만들기'}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -418,7 +418,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
               <div className="w-full border-t border-[#27272a]"></div>
             </div>
             <div className="relative flex justify-center text-xs select-none">
-              <span className="px-3 bg-[#09090b] text-[#71717a]">Or continue with</span>
+              <span className="px-3 bg-[#09090b] text-[#71717a]">또는 다음 계정으로 계속하기</span>
             </div>
           </div>
 
@@ -444,9 +444,9 @@ export default function LoginPage({ onNavigate, onLoginSuccess }: LoginPageProps
 
           {/* Sign agreements */}
           <p className="text-center text-[10px] text-[#71717a] mt-8 leading-relaxed select-none">
-            © 2026 Escualo. Inspired by Obsidian.<br/>By continuing, you agree to Escualo's{' '}
-            <a href="#" className="text-brand-primary hover:underline">Terms of Service</a> and{' '}
-            <a href="#" className="text-brand-primary hover:underline">Privacy Policy</a>.
+            © 2026 Escualo. Inspired by Obsidian.<br/>계속 진행함으로써, 귀하는 에스쿠알로의{' '}
+            <a href="#" className="text-brand-primary hover:underline">이용 약관</a> 및{' '}
+            <a href="#" className="text-brand-primary hover:underline">개인정보 처리방침</a>에 동의하게 됩니다.
           </p>
         </div>
       </div>

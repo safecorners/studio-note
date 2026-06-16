@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, Home, FileText, Edit2, User as UserIcon, LogOut, 
   Search, Bell, Settings, Grid, List, Trash2, Eye, Code, Terminal
 } from 'lucide-react';
 import { ActiveView, NoteItem, UserState } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface DashboardViewProps {
   user: UserState;
@@ -26,6 +27,36 @@ export default function DashboardView({
 }: DashboardViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
+  const [totalNotesCount, setTotalNotesCount] = useState<number>(notes.length);
+
+  const fetchTotalNotesCount = async () => {
+    try {
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !currentUser) {
+        setTotalNotesCount(notes.length);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from('notes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id);
+
+      if (error) {
+        console.error('Error counting notes:', error);
+        setTotalNotesCount(notes.length);
+      } else if (count !== null) {
+        setTotalNotesCount(count);
+      }
+    } catch (err) {
+      console.error('Failed to fetch total notes count:', err);
+      setTotalNotesCount(notes.length);
+    }
+  };
+
+  useEffect(() => {
+    fetchTotalNotesCount();
+  }, [notes, user.id]);
 
   // Filter notes based on the live search input
   const filteredNotes = notes.filter(note => {
@@ -50,7 +81,7 @@ export default function DashboardView({
           </div>
           <div>
             <h1 className="text-sm font-bold text-white tracking-tight">Escualo Cloud</h1>
-            <p className="text-[10px] text-brand-accent tracking-wider font-mono uppercase font-semibold">Pro Plan Active</p>
+            <p className="text-[10px] text-brand-accent tracking-wider font-mono uppercase font-semibold">프로 요금제 활성됨</p>
           </div>
         </div>
 
@@ -61,7 +92,7 @@ export default function DashboardView({
           className="w-full mb-6 bg-brand-primary hover:bg-[#bbf7d0] hover:text-[#001a12] text-[#0a0012] font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors border border-transparent shadow-md cursor-pointer active:scale-95"
         >
           <Plus className="w-4 h-4 shrink-0" />
-          <span className="text-xs">New Note</span>
+          <span className="text-xs">새 노트 작성</span>
         </button>
 
         {/* Link navigation items list */}
@@ -72,7 +103,7 @@ export default function DashboardView({
             className="flex items-center gap-3 w-full text-left bg-brand-primary/10 border border-brand-primary/20 text-brand-primary rounded-lg px-4 py-2.5 font-semibold transition-all scale-[0.98] cursor-pointer"
           >
             <Home className="w-4 h-4 shrink-0" />
-            Home Directory
+            홈 디렉터리
           </button>
 
           {/* Inactive notes trigger */}
@@ -82,7 +113,7 @@ export default function DashboardView({
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <FileText className="w-4 h-4 shrink-0" />
-            Note Editor
+            노트 에디터
           </button>
 
           {/* Create Blank note trigger */}
@@ -92,33 +123,30 @@ export default function DashboardView({
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <Edit2 className="w-4 h-4 shrink-0" />
-            Create Note
+            노트 만들기
           </button>
 
           {/* Account profile link */}
           <button 
             id="sidemenu-account"
-            onClick={() => { alert(`User profile session details:\nName: ${user.fullName}\nEmail: ${user.email}\nTier: ${user.plan.toUpperCase()}`); }}
+            onClick={() => { alert(`사용자 프로필 세션 정보:\n이름: ${user.fullName}\n이메일: ${user.email}\n요금제: ${user.plan.toUpperCase()}`); }}
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <UserIcon className="w-4 h-4 shrink-0" />
-            Account Config
+            계정 정보
           </button>
         </nav>
 
         {/* Sidebar Footer Logout triggers */}
-        <div className="mt-auto pt-4 border-t border-[#27272a] space-y-4">
+        <div className="mt-auto pt-4 border-t border-[#27272a]">
           <button 
             id="sidemenu-logout"
             onClick={onLogout}
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#520000]/20 hover:text-red-400 transition-all rounded-lg px-4 py-2 font-semibold text-xs cursor-pointer"
           >
             <LogOut className="w-4 h-4 text-red-500 shrink-0" />
-            Logout session
+            로그아웃
           </button>
-          <div className="px-4 text-[9px] font-mono text-[#71717a] leading-relaxed select-none">
-            © 2026 Escualo. Inspired by Obsidian. Built for builders.
-          </div>
         </div>
       </aside>
 
@@ -131,7 +159,7 @@ export default function DashboardView({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a] group-focus-within:text-brand-primary transition-colors" />
             <input 
               type="text" 
-              placeholder="Search Escualo notes, tags, or commands... (Cmd+K)" 
+              placeholder="에스쿠알로 노트, 태그, 명령어 검색... (Cmd+K)" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#121215] border border-[#27272a] rounded-lg py-2 pl-10 pr-4 text-xs text-white placeholder:text-[#71717a] focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all font-sans"
@@ -141,9 +169,9 @@ export default function DashboardView({
           <div className="flex items-center gap-4">
             {/* Quick alert bar */}
             <button 
-              onClick={() => { alert('No pending sync alert conflicts across the cloud node network.'); }}
+              onClick={() => { alert('클라우드 노드 네트워크에 대기 중이거나 충돌하는 동기화 작업이 없습니다.'); }}
               className="text-[#a1a1aa] hover:text-brand-primary transition-colors cursor-pointer relative"
-              title="Notifications"
+              title="알림"
             >
               <Bell className="w-4 h-4" />
               <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-brand-accent rounded-full"></span>
@@ -153,7 +181,7 @@ export default function DashboardView({
             <button 
               onClick={() => onNavigate('pricing')}
               className="text-[#a1a1aa] hover:text-brand-primary transition-colors cursor-pointer"
-              title="Pricing & Subscriptions"
+              title="요금제 및 멤버십"
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -188,7 +216,7 @@ export default function DashboardView({
           <div className="relative w-48 shrink-0">
             <input 
               type="text" 
-              placeholder="Search..." 
+              placeholder="검색..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#121215] border border-[#27272a] rounded-lg py-1.5 px-3 text-xs text-white placeholder:text-[#52525b] focus:outline-none"
@@ -199,12 +227,43 @@ export default function DashboardView({
         {/* main container list notes scroll scroll */}
         <div className="flex-grow overflow-y-auto p-6 md:p-8 relative">
           <div className="max-w-6xl mx-auto">
+
+            {/* Quick Metrics Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+              {/* Total Notes card */}
+              <div id="stat-total-notes" className="md:col-span-2 bg-[#121215] border border-[#27272a]/80 hover:border-[#3f3f46] rounded-xl p-5 relative overflow-hidden flex flex-col justify-between group h-28 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-0 pointer-events-none" />
+                <div className="z-10 flex flex-col justify-between h-full w-full">
+                  <span className="text-[#71717a] text-[10px] font-bold uppercase tracking-wider font-sans">총 노트 수</span>
+                  <div className="flex items-baseline justify-between mt-1">
+                    <span className="text-3xl font-bold font-sans tracking-tight text-white">{totalNotesCount}</span>
+                    <span className="text-[10px] font-mono text-brand-primary bg-brand-primary/10 border border-brand-primary/15 px-2.5 py-0.5 rounded-full font-semibold">
+                      실시간 동기화
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connected Account status */}
+              <div id="stat-account-tier" className="md:col-span-1 bg-[#121215] border border-[#27272a]/80 hover:border-[#3f3f46] rounded-xl p-5 relative overflow-hidden flex flex-col justify-between group h-28 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-0 pointer-events-none" />
+                <div className="z-10 flex flex-col justify-between h-full w-full">
+                  <span className="text-[#71717a] text-[10px] font-bold uppercase tracking-wider font-sans">구독 요금제</span>
+                  <div className="flex items-baseline justify-between mt-1">
+                    <span className="text-3xl font-bold font-sans tracking-tight text-white capitalize">{user.plan === 'free' ? '무료' : user.plan}</span>
+                    <span className="text-[10px] font-mono text-brand-accent bg-brand-accent/10 border border-brand-accent/15 px-2.5 py-0.5 rounded-full font-semibold">
+                      PRO 노드
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
             
             {/* Recent Notes Header with toggles */}
             <div className="flex items-end justify-between mb-8">
               <div>
-                <h2 className="text-xl font-bold text-white tracking-tight font-sans">Recent Notes</h2>
-                <p className="text-xs text-[#a1a1aa] mt-1 font-sans">Pick up where you left off. Search matching: {filteredNotes.length} notes.</p>
+                <h2 className="text-xl font-bold text-white tracking-tight font-sans">최근 노트</h2>
+                <p className="text-xs text-[#a1a1aa] mt-1 font-sans">작업을 계속해 보세요. 검색된 노트: {filteredNotes.length}개.</p>
               </div>
 
               {/* Layout triggers */}
@@ -238,13 +297,13 @@ export default function DashboardView({
             {filteredNotes.length === 0 && (
               <div className="border border-dashed border-[#27272a] rounded-xl py-16 px-4 text-center">
                 <FileText className="w-8 h-8 text-[#52525b] mx-auto mb-3" />
-                <h3 className="text-sm font-semibold text-white mb-1">No notes match filter criteria</h3>
-                <p className="text-xs text-[#71717a] mb-4">Try altering your search keywords or create a new document file.</p>
+                <h3 className="text-sm font-semibold text-white mb-1">필터 조건과 일치하는 노트가 없습니다</h3>
+                <p className="text-xs text-[#71717a] mb-4">검색 키워드를 변경하거나 새 문서를 작성해 보세요.</p>
                 <button
                   onClick={onCreateNewNote}
                   className="bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs px-4 py-2 rounded-lg hover:bg-brand-primary/20 transition-all font-semibold cursor-pointer"
                 >
-                  Create Document File +
+                  새 문서 파일 만들기 +
                 </button>
               </div>
             )}
@@ -270,13 +329,13 @@ export default function DashboardView({
                     {/* Header item with title & time indicator */}
                     <div className="flex items-start justify-between gap-1 mb-2">
                       <h3 className="text-sm font-semibold text-white group-hover:text-brand-primary transition-colors line-clamp-1 font-sans">
-                        {note.title || 'Untitled Note'}
+                        {note.title || '제목 없는 노트'}
                       </h3>
                       <span className="text-[10px] font-mono text-[#71717a] shrink-0 select-none whitespace-nowrap pt-0.5">
                         {note.updatedAt}
                       </span>
                     </div>
-
+ 
                     {/* Code snippet stylized container vs raw body preview */}
                     {note.isSnippet && note.snippetCode ? (
                       <div className="my-2 bg-[#09090b] text-[#34d399] p-3.5 rounded border border-[#27272a] text-[11px] font-mono overflow-hidden max-h-24 select-text">
@@ -286,11 +345,11 @@ export default function DashboardView({
                       </div>
                     ) : (
                       <p className={`text-xs text-[#a1a1aa] leading-relaxed font-sans ${layoutMode === 'grid' ? 'line-clamp-3' : 'line-clamp-1 flex-1 max-w-2xl px-4'}`}>
-                        {note.content || 'Empty note content. Click here to edit...'}
+                        {note.content || '노트 내용이 비어 있습니다. 클릭해서 작성해 보세요...'}
                       </p>
                     )}
                   </div>
-
+ 
                   {/* tags footer list and Delete action toggle trigger */}
                   <div className={`mt-4 pt-2 border-t border-[#27272a]/40 z-10 flex items-center justify-between shrink-0 ${layoutMode === 'grid' ? '' : 'mt-0 pt-0 border-t-0 gap-4'}`}>
                     <div className="flex flex-wrap gap-1.5">
@@ -303,25 +362,25 @@ export default function DashboardView({
                         </span>
                       ))}
                     </div>
-
+ 
                     <div className="flex items-center gap-2">
                       {/* Action trigger: edit directly */}
                       <span className="text-[10px] text-[#71717a] font-mono group-hover:text-brand-primary transition-colors flex items-center gap-1">
                         <Eye className="w-3 h-3" />
-                        <span>edit</span>
+                        <span>편집</span>
                       </span>
-
+ 
                       {/* Action trigger: delete Note */}
                       <button 
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Confirm deletion of file: "${note.title}"?`)) {
+                          if (confirm(`정말 이 노트를 삭제하시겠습니까: "${note.title}"?`)) {
                             onDeleteNote(note.id);
                           }
                         }}
                         className="p-1 rounded bg-[#09090b] hover:bg-red-950/40 border border-[#27272a]/60 text-[#71717a] hover:text-red-400 opacity-60 hover:opacity-100 transition-all cursor-pointer"
-                        title="Delete note"
+                        title="노트 삭제"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -336,8 +395,8 @@ export default function DashboardView({
               <div className="flex items-center gap-3">
                 <Terminal className="w-5 h-5 text-brand-accent shrink-0" />
                 <div>
-                  <h4 className="text-xs font-semibold text-white">Interactive CLI Integration System</h4>
-                  <p className="text-[10px] text-[#a1a1aa] mt-1">Configure your obsidian config folders directly matching the cloud pipeline.</p>
+                  <h4 className="text-xs font-semibold text-white">대화형 CLI 통합 시스템</h4>
+                  <p className="text-[10px] text-[#a1a1aa] mt-1">옵시디언 로컬 폴더를 클라우드 파이프라인과 완벽히 동기화하세요.</p>
                 </div>
               </div>
               <span className="bg-[#09090b] border border-[#27272a] rounded px-2.5 py-1 text-[9px] font-mono text-[#a1a1aa] select-all">

@@ -31,7 +31,7 @@ export default function NoteEditorView({
   // Mutable editor contents
   const [editorTitle, setEditorTitle] = useState(activeNote.title);
   const [editorContent, setEditorContent] = useState(activeNote.content);
-  const [saveStatus, setSaveStatus] = useState('Saved just now');
+  const [saveStatus, setSaveStatus] = useState('방금 저장됨');
   const [isDragOver, setIsDragOver] = useState(false);
 
   // Line calculations for Raw Editor
@@ -48,7 +48,7 @@ export default function NoteEditorView({
   useEffect(() => {
     setEditorTitle(activeNote.title);
     setEditorContent(activeNote.content);
-    setSaveStatus('Saved');
+    setSaveStatus('저장됨');
   }, [activeNote]);
 
   // Recalculate physical line counts
@@ -62,35 +62,35 @@ export default function NoteEditorView({
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setEditorContent(value);
-    setSaveStatus('Saving changes...');
+    setSaveStatus('변경 사항 저장 중...');
     
     // Bubble up state update
     onUpdateNote({
       ...activeNote,
       title: editorTitle,
       content: value,
-      updatedAt: 'Just now'
+      updatedAt: '방금 전'
     });
 
     setTimeout(() => {
-      setSaveStatus('Saved just now');
+      setSaveStatus('방금 저장됨');
     }, 600);
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEditorTitle(value);
-    setSaveStatus('Saving changes...');
+    setSaveStatus('변경 사항 저장 중...');
 
     onUpdateNote({
       ...activeNote,
       title: value,
       content: editorContent,
-      updatedAt: 'Just now'
+      updatedAt: '방금 전'
     });
 
     setTimeout(() => {
-      setSaveStatus('Saved just now');
+      setSaveStatus('방금 저장됨');
     }, 600);
   };
 
@@ -553,7 +553,7 @@ export default function NoteEditorView({
           </div>
           <div>
             <div className="text-sm font-bold text-white tracking-tight">Escualo Cloud</div>
-            <div className="text-[10px] text-brand-accent font-mono uppercase font-semibold">Pro Plan Active</div>
+            <div className="text-[10px] text-brand-accent font-mono uppercase font-semibold">프로 요금제 활성됨</div>
           </div>
         </div>
 
@@ -567,7 +567,7 @@ export default function NoteEditorView({
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <Home className="w-4 h-4 shrink-0" />
-            Home Directory
+            홈 디렉터리
           </button>
 
           {/* Active note editor */}
@@ -576,7 +576,7 @@ export default function NoteEditorView({
             className="flex items-center gap-3 w-full text-left bg-brand-primary/10 border border-brand-primary/20 text-brand-primary rounded-lg px-4 py-2.5 font-semibold transition-all scale-[0.98]"
           >
             <FileText className="w-4 h-4 shrink-0 text-brand-primary" />
-            Note Editor
+            노트 에디터
           </button>
 
           {/* create new blank note */}
@@ -586,16 +586,16 @@ export default function NoteEditorView({
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <Edit2 className="w-4 h-4 shrink-0" />
-            Create Note
+            노트 만들기
           </button>
 
           {/* account session */}
           <button 
-            onClick={() => { alert(`Username: ${user.fullName}\nEmail Details: ${user.email}`); }}
+            onClick={() => { alert(`사용자명: ${user.fullName}\n이메일: ${user.email}`); }}
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <User className="w-4 h-4 shrink-0" />
-            Account Config
+            계정 정보
           </button>
         </div>
 
@@ -606,7 +606,7 @@ export default function NoteEditorView({
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#520000]/20 hover:text-red-400 transition-all rounded-lg px-4 py-2 font-semibold text-xs cursor-pointer"
           >
             <LogOut className="w-4 h-4 text-red-500 shrink-0" />
-            Logout session
+            로그아웃
           </button>
         </div>
       </nav>
@@ -624,13 +624,13 @@ export default function NoteEditorView({
         <div className="h-14 border-b border-[#27272a] flex items-center justify-between px-4 shrink-0 bg-[#0c0c0f]">
           <h3 className="font-semibold text-white text-xs tracking-tight flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
-            Attachments Folder
+            첨부파일 폴더
           </h3>
           <button 
             id="btn-upload-file"
             onClick={handleFileClick}
             className="w-6 h-6 rounded flex items-center justify-center text-[#a1a1aa] hover:bg-[#121215] hover:text-brand-primary transition-colors cursor-pointer" 
-            title="Upload Local File"
+            title="로컬 파일 업로드"
           >
             <Upload className="w-3.5 h-3.5" />
           </button>
@@ -651,7 +651,7 @@ export default function NoteEditorView({
           {/* Drag block overlay descriptor */}
           {isDragOver && (
             <div className="bg-brand-primary/10 border border-brand-primary/30 p-4 rounded-lg text-center text-xs text-brand-primary animate-pulse select-none">
-              Drop file to upload
+              업로드할 파일을 여기에 놓으세요
             </div>
           )}
 
@@ -659,7 +659,7 @@ export default function NoteEditorView({
           {isLoading ? (
             <div className="py-8 text-center text-[#71717a] flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin text-brand-primary" />
-              <span className="text-[10px] uppercase tracking-wider font-semibold">Loading media...</span>
+              <span className="text-[10px] uppercase tracking-wider font-semibold">미디어 로딩 중...</span>
             </div>
           ) : (
             <>
@@ -667,22 +667,22 @@ export default function NoteEditorView({
               {isUploading && (
                 <div className="bg-brand-primary/5 border border-brand-primary/20 p-2.5 rounded-lg text-center text-[10px] text-brand-primary animate-pulse mb-3">
                   <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto mb-1" />
-                  Storing file...
+                  파일 저장 중...
                 </div>
               )}
 
               {/* Segment: IMAGES */}
-              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-2">Images</div>
+              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-2">이미지</div>
               
               {attachments.filter(a => a.type === 'image').length === 0 ? (
-                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">No images uploaded</div>
+                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">업로드된 이미지 없음</div>
               ) : (
                 attachments.filter(a => a.type === 'image').map(att => (
                   <div 
                     key={att.id}
                     onClick={() => handleAttachmentClick(att)}
                     className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-[#121215] cursor-pointer transition-colors group"
-                    title="Click to insert reference tag"
+                    title="클릭하여 참조 태그 삽입"
                   >
                     <div className="w-7 h-7 rounded border border-[#27272a] bg-[#121215] overflow-hidden shrink-0 flex items-center justify-center">
                       <img 
@@ -699,7 +699,7 @@ export default function NoteEditorView({
                     <button
                       onClick={(e) => handleDeleteAttachment(att, e)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#f43f5e] hover:bg-[#27272a]/80 hover:text-red-400 rounded cursor-pointer shrink-0"
-                      title="Delete attachment"
+                      title="첨부파일 삭제"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -708,16 +708,16 @@ export default function NoteEditorView({
               )}
 
               {/* Segment: DOCUMENTS */}
-              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">Documents</div>
+              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">문서</div>
               {attachments.filter(a => a.type === 'document').length === 0 ? (
-                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">No documents uploaded</div>
+                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">업로드된 문서 없음</div>
               ) : (
                 attachments.filter(a => a.type === 'document').map(att => (
                   <div 
                     key={att.id}
                     onClick={() => handleAttachmentClick(att)}
                     className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-[#121215] cursor-pointer transition-colors group"
-                    title="Click to insert file reference"
+                    title="클릭하여 파일 참조 삽입"
                   >
                     <div className="w-7 h-7 rounded border border-[#27272a] bg-[#121215] overflow-hidden shrink-0 flex items-center justify-center text-[#71717a] group-hover:text-brand-primary">
                       <File className="w-4 h-4" />
@@ -729,7 +729,7 @@ export default function NoteEditorView({
                     <button
                       onClick={(e) => handleDeleteAttachment(att, e)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#f43f5e] hover:bg-[#27272a]/80 hover:text-red-400 rounded cursor-pointer shrink-0"
-                      title="Delete attachment"
+                      title="첨부파일 삭제"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -738,9 +738,9 @@ export default function NoteEditorView({
               )}
 
               {/* Segment: SNIPPETS */}
-              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">Snippets</div>
+              <div className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-1 px-2 mt-4">코드 스니펫</div>
               {attachments.filter(a => a.type === 'snippet').length === 0 ? (
-                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">No code snippets uploaded</div>
+                <div className="text-[11px] text-[#52525b] italic px-2 py-1 select-none">업로드된 스니펫 없음</div>
               ) : (
                 attachments.filter(a => a.type === 'snippet').map(att => {
                   const isActive = att.id === 'att-4'; // keep reference pattern matching original mock active block behavior if useful
@@ -753,7 +753,7 @@ export default function NoteEditorView({
                           ? 'bg-[#18181b] border border-[#27272a]' 
                           : 'hover:bg-[#121215]'
                       }`}
-                      title="Click to insert snippet tag"
+                      title="클릭하여 스니펫 태그 삽입"
                     >
                       {isActive && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand-primary"></div>}
                       <div className={`w-7 h-7 rounded border overflow-hidden shrink-0 flex items-center justify-center ${
@@ -767,12 +767,12 @@ export default function NoteEditorView({
                         <span className={`text-xs truncate font-medium max-w-[100px] ${
                           isActive ? 'text-white' : 'text-[#a1a1aa] group-hover:text-white'
                         }`}>{att.name}</span>
-                        {isActive && <span className="text-[9.5px] text-brand-primary font-semibold font-mono mt-0.5">Active</span>}
+                        {isActive && <span className="text-[9.5px] text-brand-primary font-semibold font-mono mt-0.5">활성</span>}
                       </div>
                       <button
                         onClick={(e) => handleDeleteAttachment(att, e)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#f43f5e] hover:bg-[#27272a]/80 hover:text-red-400 rounded cursor-pointer shrink-0"
-                        title="Delete attachment"
+                        title="첨부파일 삭제"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -789,8 +789,8 @@ export default function NoteEditorView({
         <div className="p-3 shrink-0 border-t border-[#27272a] select-all">
           <div className="bg-[#121215] rounded-lg p-2.5 text-center text-[10px] text-[#71717a] leading-relaxed select-all">
             <Sparkles className="w-3.5 h-3.5 text-brand-primary mx-auto mb-1 animate-bounce" />
-            <span className="text-white font-medium block">Drag files anywhere here</span>
-            or click "+" above.
+            <span className="text-white font-medium block">여기에 파일 리스트 끌어다 놓기</span>
+            또는 위의 "+"를 클릭하세요.
           </div>
         </div>
       </aside>
@@ -806,7 +806,7 @@ export default function NoteEditorView({
             <button 
               onClick={() => onNavigate('dashboard')}
               className="lg:hidden p-1.5 rounded-md hover:bg-[#121215] text-[#a1a1aa] hover:text-white"
-              title="Return Dashboard"
+              title="대시보드로 이동"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -814,7 +814,7 @@ export default function NoteEditorView({
               type="text" 
               value={editorTitle}
               onChange={handleTitleChange}
-              placeholder="Untitled Document" 
+              placeholder="제목 없는 문서" 
               className="w-full max-w-sm bg-transparent border-none text-white font-bold text-base tracking-tight focus:ring-0 focus:outline-none placeholder:text-[#52525b] p-0 font-sans cursor-text"
             />
           </div>
@@ -824,21 +824,21 @@ export default function NoteEditorView({
             <button 
               onClick={() => injectMarkdown('bold')}
               className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#27272a] text-[#a1a1aa] hover:text-white transition-colors cursor-pointer" 
-              title="Bold text"
+              title="굵게"
             >
               <Bold className="w-3.5 h-3.5" />
             </button>
             <button 
               onClick={() => injectMarkdown('italic')}
               className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#27272a] text-[#a1a1aa] hover:text-white transition-colors cursor-pointer" 
-              title="Italic text"
+              title="기울임꼴"
             >
               <Italic className="w-3.5 h-3.5" />
             </button>
             <button 
               onClick={() => injectMarkdown('strikethrough')}
               className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#27272a] text-[#a1a1aa] hover:text-white transition-colors cursor-pointer" 
-              title="Strikethrough"
+              title="취소선"
             >
               <Strikethrough className="w-3.5 h-3.5" />
             </button>
@@ -848,21 +848,21 @@ export default function NoteEditorView({
             <button 
               onClick={() => injectMarkdown('code')}
               className="w-7 h-7 rounded flex items-center justify-center bg-brand-primary/10 border border-brand-primary/20 text-brand-primary hover:bg-brand-primary/20 transition-colors shadow-sm cursor-pointer" 
-              title="Code fencing block"
+              title="코드 블록 삽입"
             >
               <Code className="w-3.5 h-3.5" />
             </button>
             <button 
               onClick={() => injectMarkdown('link')}
               className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#27272a] text-[#a1a1aa] hover:text-white transition-colors cursor-pointer" 
-              title="Insert URL Link"
+              title="URL 링크 삽입"
             >
               <LinkIcon className="w-3.5 h-3.5" />
             </button>
             <button 
               onClick={() => injectMarkdown('quote')}
               className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#27272a] text-[#a1a1aa] hover:text-white transition-colors cursor-pointer" 
-              title="Blockquote paragraph"
+              title="인용구 삽입"
             >
               <Quote className="w-3.5 h-3.5" />
             </button>
@@ -872,7 +872,7 @@ export default function NoteEditorView({
             <button 
               onClick={() => injectMarkdown('list')}
               className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#27272a] text-[#a1a1aa] hover:text-white transition-colors cursor-pointer" 
-              title="Bulleted checklist item"
+              title="글머리 기호 목록 삽입"
             >
               <ListIcon className="w-3.5 h-3.5" />
             </button>
@@ -884,16 +884,16 @@ export default function NoteEditorView({
               {saveStatus}
             </span>
             <button 
-              onClick={() => { alert(`Public access link simulated:\nhttps://escualo.cloud/notes/share/${activeNote.id}`); }}
+              onClick={() => { alert(`공유 가능한 외부 링크가 시뮬레이션되었습니다:\nhttps://escualo.cloud/notes/share/${activeNote.id}`); }}
               className="h-8 px-3.5 rounded-lg text-xs font-semibold border border-[#27272a] text-[#a1a1aa] hover:text-white hover:bg-[#121215] transition-all cursor-pointer"
             >
-              Share
+              공유
             </button>
             <button 
-              onClick={() => { alert(`Document published successfully to Escualo Hub:\nTitle: ${activeNote.title}`); }}
+              onClick={() => { alert(`문서가 에스쿠알로 허브에 제작 및 게시되었습니다:\n제목: ${activeNote.title}`); }}
               className="h-8 px-3.5 rounded-lg bg-brand-primary hover:bg-[#bbf7d0] hover:text-[#001a12] text-[#0a0012] text-xs font-bold transition-all shadow-[0_0_10px_rgba(167,139,250,0.2)] focus:ring-1 focus:ring-brand-primary cursor-pointer active:scale-95"
             >
-              Publish
+              게시
             </button>
           </div>
         </header>
@@ -909,7 +909,7 @@ export default function NoteEditorView({
             
             {/* Raw code flag marker label */}
             <div className="absolute top-2 right-2 p-1 bg-[#121215] border border-[#27272a] rounded text-[8px] font-mono text-[#71717a] pointer-events-none z-10 select-none opacity-60">
-              RAW SOURCE
+              원본 소스
             </div>
 
             {/* Simulated Line numbers gutter panel */}
@@ -927,7 +927,7 @@ export default function NoteEditorView({
               value={editorContent}
               onChange={handleContentChange}
               spellCheck="false"
-              placeholder="Start coding or typing Markdown macros..." 
+              placeholder="여기에 코딩을 시작하거나 마크다운 매크로를 입력하세요..." 
               className="w-full h-full bg-transparent border-none outline-none resize-none focus:outline-none focus:ring-0 text-white font-mono text-xs leading-[18.2px] py-6 px-6 placeholder-[#27272a] cursor-text"
             />
           </div>
@@ -938,7 +938,7 @@ export default function NoteEditorView({
             {/* Live indicator check pill */}
             <div className="flex items-center gap-1.5 mb-6 text-[10px] font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 border border-brand-primary/20 w-max px-2 py-0.5 rounded-full select-none">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse"></span>
-              <span>Obsidian live compilation preview</span>
+              <span>옵시디언 실시간 컴파일 프리뷰</span>
             </div>
 
             {/* Rendered HTML container */}
@@ -950,7 +950,7 @@ export default function NoteEditorView({
             {!editorContent.trim() && (
               <div className="text-center py-20 opacity-40 select-none">
                 <FileCheck className="w-8 h-8 mx-auto text-[#71717a] mb-2" />
-                <span className="text-xs text-[#a1a1aa] block font-sans">Live compiled output will appear here.</span>
+                <span className="text-xs text-[#a1a1aa] block font-sans">실시간 컴파일된 결과가 여기에 표시됩니다.</span>
               </div>
             )}
           </div>
@@ -959,7 +959,7 @@ export default function NoteEditorView({
 
         {/* Secondary warning guidance for smaller screens */}
         <div id="device-warning" className="lg:hidden absolute bottom-4 right-4 bg-[#121215] border border-[#27272a] p-2.5 rounded-lg text-center text-[10px] text-brand-primary shadow-lg max-w-xs block select-none">
-          Use desktop screens for side-by-side splits.
+          좌우 분할 뷰를 보려면 태블릿이나 데스크톱의 큰 화면 형태를 이용해 주세요.
         </div>
 
       </div>
