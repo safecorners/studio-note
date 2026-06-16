@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   User, 
@@ -38,6 +38,30 @@ export default function AccountInfoView({
   const [newName, setNewName] = useState(user.fullName);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [authProvider, setAuthProvider] = useState<string>('이메일 및 비밀번호');
+
+  useEffect(() => {
+    const fetchSessionProvider = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const provider = session.user.app_metadata?.provider || session.user.identities?.[0]?.provider || 'email';
+          if (provider === 'google') {
+            setAuthProvider('Google OAuth');
+          } else if (provider === 'github') {
+            setAuthProvider('GitHub OAuth');
+          } else if (provider === 'email') {
+            setAuthProvider('이메일 / 비밀번호');
+          } else {
+            setAuthProvider(`${provider.charAt(0).toUpperCase() + provider.slice(1)} OAuth`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to resolve auth provider:', err);
+      }
+    };
+    fetchSessionProvider();
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!newName.trim()) return;
@@ -306,21 +330,26 @@ export default function AccountInfoView({
 
                 <div>
                   <h3 className="text-sm font-semibold text-white tracking-tight">인증 제공 모델</h3>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-xs text-[#a1a1aa]">Supabase JWT Identity Authentication</span>
+                  <div className="mt-2 p-3 bg-brand-primary/5 border border-brand-primary/10 rounded-lg flex items-center justify-between">
+                    <span className="text-xs font-semibold text-brand-primary lg:text-sm">{authProvider} 연동 완료</span>
+                    <span className="text-[10px] font-mono text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded border border-brand-primary/20 uppercase tracking-wider font-semibold shrink-0">
+                      {authProvider.includes('OAuth') ? 'OAuth 2.0' : 'Email Auth'}
+                    </span>
                   </div>
-                  <p className="text-[#71717a] text-[11px] mt-2 leading-relaxed font-mono">
-                    이메일 기반 로그인 및 간편한 소셜 연동을 통해 개인 노트 소유권과 보안 규칙이 안전하게 검증됩니다.
+                  <p className="text-[#a1a1aa] text-xs mt-2.5 leading-relaxed">
+                    {authProvider.includes('OAuth') 
+                      ? `${authProvider} 계정 연동을 통해 보안 비밀번호 입력 없이 안전하고 강력하게 보증된 세션입니다.`
+                      : '이메일 주소 및 복잡한 비밀번호 암호해시 매칭을 통해 독립적으로 증명된 로그인 세션입니다.'}
                   </p>
                 </div>
 
                 <div className="p-3 bg-[#18181b]/60 border border-[#27272a] rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[11px] font-semibold text-white font-mono">Supabase Auth Connected</span>
+                    <span className="text-[11px] font-semibold text-white font-mono">{authProvider} Connected</span>
                   </div>
                   <p className="text-[10px] text-[#71717a] font-mono mt-1">
-                    인증 토큰: SHA-256 JWT Signed RSA
+                    인증 제공 수단: {authProvider} 기반 토큰 검증
                   </p>
                 </div>
               </div>
