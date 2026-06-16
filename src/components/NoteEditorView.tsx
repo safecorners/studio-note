@@ -3,7 +3,7 @@ import {
   Home, FileText, Edit2, User, LogOut, Upload, FileCode, FileImage, 
   FileCheck, File, Bold, Italic, Strikethrough, Code, Link as LinkIcon, 
   Quote, List as ListIcon, Save, Heart, Sparkles, Eye, Share2, Globe, ArrowLeft,
-  Trash2, Loader2
+  Trash2, Loader2, Archive
 } from 'lucide-react';
 import { ActiveView, NoteItem, AttachmentItem, UserState } from '../types';
 import { supabase } from '../lib/supabase';
@@ -16,6 +16,8 @@ interface NoteEditorViewProps {
   onUpdateNote: (updatedNote: NoteItem) => void;
   onLogout: () => void;
   onCreateNewNote: () => void;
+  currentFolder: 'active' | 'archive' | 'trash';
+  setCurrentFolder: (folder: 'active' | 'archive' | 'trash') => void;
 }
 
 export default function NoteEditorView({ 
@@ -25,8 +27,13 @@ export default function NoteEditorView({
   onNavigate, 
   onUpdateNote, 
   onLogout,
-  onCreateNewNote
+  onCreateNewNote,
+  currentFolder,
+  setCurrentFolder
 }: NoteEditorViewProps) {
+  const activeCount = notes.filter(n => !n.tags.includes('_archived') && !n.tags.includes('_trashed')).length;
+  const archiveCount = notes.filter(n => n.tags.includes('_archived') && !n.tags.includes('_trashed')).length;
+  const trashCount = notes.filter(n => n.tags.includes('_trashed')).length;
   
   // Mutable editor contents
   const [editorTitle, setEditorTitle] = useState(activeNote.title);
@@ -563,12 +570,52 @@ export default function NoteEditorView({
           {/* Home directory link */}
           <button 
             id="editor-rail-home"
-            onClick={() => onNavigate('dashboard')}
-            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
+            onClick={() => {
+              setCurrentFolder('active');
+              onNavigate('dashboard');
+            }}
+            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer border border-transparent"
           >
             <Home className="w-4 h-4 shrink-0" />
-            홈 디렉터리
+            <span>홈 디렉터리</span>
+            <span className="ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-[#18181b] text-[#71717a] border-[#27272a]">
+              {activeCount}
+            </span>
           </button>
+
+          {/* Archive link */}
+          <button 
+            id="editor-rail-archive"
+            onClick={() => {
+              setCurrentFolder('archive');
+              onNavigate('dashboard');
+            }}
+            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer border border-transparent"
+          >
+            <Archive className="w-4 h-4 shrink-0" />
+            <span>보관함</span>
+            <span className="ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-[#18181b] text-[#71717a] border-[#27272a]">
+              {archiveCount}
+            </span>
+          </button>
+
+          {/* Trash link */}
+          <button 
+            id="editor-rail-trash"
+            onClick={() => {
+              setCurrentFolder('trash');
+              onNavigate('dashboard');
+            }}
+            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer border border-transparent"
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            <span>휴지통</span>
+            <span className="ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-[#18181b] text-[#71717a] border-[#27272a]">
+              {trashCount}
+            </span>
+          </button>
+
+          <div className="my-2 border-t border-[#27272a]/40" />
 
           {/* Active note editor */}
           <button 

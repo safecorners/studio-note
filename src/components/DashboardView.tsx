@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Home, FileText, Edit2, User as UserIcon, LogOut, 
-  Search, Bell, Settings, Grid, List, Trash2, Eye
+  Search, Bell, Settings, Grid, List, Trash2, Eye, Archive, RotateCcw
 } from 'lucide-react';
 import { ActiveView, NoteItem, UserState } from '../types';
 import { supabase } from '../lib/supabase';
@@ -14,6 +14,9 @@ interface DashboardViewProps {
   onCreateNewNote: () => void;
   onDeleteNote: (id: string) => void;
   onLogout: () => void;
+  onUpdateNote: (note: NoteItem) => void;
+  currentFolder: 'active' | 'archive' | 'trash';
+  setCurrentFolder: (folder: 'active' | 'archive' | 'trash') => void;
 }
 
 export default function DashboardView({ 
@@ -23,11 +26,54 @@ export default function DashboardView({
   onSelectNote, 
   onCreateNewNote, 
   onDeleteNote,
-  onLogout 
+  onLogout,
+  onUpdateNote,
+  currentFolder,
+  setCurrentFolder
 }: DashboardViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
   const [totalNotesCount, setTotalNotesCount] = useState<number>(notes.length);
+
+  const activeCount = notes.filter(n => !n.tags.includes('_archived') && !n.tags.includes('_trashed')).length;
+  const archiveCount = notes.filter(n => n.tags.includes('_archived') && !n.tags.includes('_trashed')).length;
+  const trashCount = notes.filter(n => n.tags.includes('_trashed')).length;
+
+  const handleArchiveClick = (note: NoteItem) => {
+    const updatedTags = [...note.tags.filter(t => t !== '_trashed')];
+    if (!updatedTags.includes('_archived')) {
+      updatedTags.push('_archived');
+    }
+    onUpdateNote({
+      ...note,
+      tags: updatedTags
+    });
+  };
+
+  const handleUnarchiveClick = (note: NoteItem) => {
+    onUpdateNote({
+      ...note,
+      tags: note.tags.filter(t => t !== '_archived')
+    });
+  };
+
+  const handleTrashClick = (note: NoteItem) => {
+    const updatedTags = [...note.tags.filter(t => t !== '_archived')];
+    if (!updatedTags.includes('_trashed')) {
+      updatedTags.push('_trashed');
+    }
+    onUpdateNote({
+      ...note,
+      tags: updatedTags
+    });
+  };
+
+  const handleRestoreClick = (note: NoteItem) => {
+    onUpdateNote({
+      ...note,
+      tags: note.tags.filter(t => t !== '_archived' && t !== '_trashed')
+    });
+  };
 
   const fetchTotalNotesCount = async () => {
     try {
@@ -60,11 +106,19 @@ export default function DashboardView({
 
   // Filter notes based on the live search input
   const filteredNotes = notes.filter(note => {
+    const isArchived = note.tags.includes('_archived');
+    const isTrashed = note.tags.includes('_trashed');
+
+    if (currentFolder === 'active' && (isArchived || isTrashed)) return false;
+    if (currentFolder === 'archive' && (!isArchived || isTrashed)) return false;
+    if (currentFolder === 'trash' && !isTrashed) return false;
+
     const q = searchQuery.toLowerCase();
+    const tagsWithoutSystem = note.tags.filter(t => !t.startsWith('_'));
     return (
       note.title.toLowerCase().includes(q) ||
       note.content.toLowerCase().includes(q) ||
-      note.tags.some(tag => tag.toLowerCase().includes(q))
+      tagsWithoutSystem.some(tag => tag.toLowerCase().includes(q))
     );
   });
 
@@ -100,11 +154,67 @@ export default function DashboardView({
           {/* Active Home item */}
           <button 
             id="sidemenu-home"
-            className="flex items-center gap-3 w-full text-left bg-brand-primary/10 border border-brand-primary/20 text-brand-primary rounded-lg px-4 py-2.5 font-semibold transition-all scale-[0.98] cursor-pointer"
+            onClick={() => setCurrentFolder('active')}
+            className={`flex items-center gap-3 w-full text-left rounded-lg px-4 py-2.5 transition-all cursor-pointer ${
+              currentFolder === 'active'
+                ? 'bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-semibold scale-[0.98]'
+                : 'text-[#a1a1aa] hover:bg-[#18181b] hover:text-white border border-transparent'
+            }`}
           >
             <Home className="w-4 h-4 shrink-0" />
-            홈 디렉터리
+            <span>홈 디렉터리</span>
+            <span className={`ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+              currentFolder === 'active' 
+                ? 'bg-brand-primary/20 text-brand-primary border-brand-primary/30' 
+                : 'bg-[#18181b] text-[#71717a] border-[#27272a]'
+            }`}>
+              {activeCount}
+            </span>
           </button>
+
+          {/* Archive item */}
+          <button 
+            id="sidemenu-archive"
+            onClick={() => setCurrentFolder('archive')}
+            className={`flex items-center gap-3 w-full text-left rounded-lg px-4 py-2.5 transition-all cursor-pointer ${
+              currentFolder === 'archive'
+                ? 'bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-semibold scale-[0.98]'
+                : 'text-[#a1a1aa] hover:bg-[#18181b] hover:text-white border border-transparent'
+            }`}
+          >
+            <Archive className="w-4 h-4 shrink-0" />
+            <span>보관함</span>
+            <span className={`ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+              currentFolder === 'archive' 
+                ? 'bg-brand-primary/20 text-brand-primary border-brand-primary/30' 
+                : 'bg-[#18181b] text-[#71717a] border-[#27272a]'
+            }`}>
+              {archiveCount}
+            </span>
+          </button>
+
+          {/* Trash item */}
+          <button 
+            id="sidemenu-trash"
+            onClick={() => setCurrentFolder('trash')}
+            className={`flex items-center gap-3 w-full text-left rounded-lg px-4 py-2.5 transition-all cursor-pointer ${
+              currentFolder === 'trash'
+                ? 'bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-semibold scale-[0.98]'
+                : 'text-[#a1a1aa] hover:bg-[#18181b] hover:text-white border border-transparent'
+            }`}
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            <span>휴지통</span>
+            <span className={`ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+              currentFolder === 'trash' 
+                ? 'bg-brand-primary/20 text-brand-primary border-brand-primary/30' 
+                : 'bg-[#18181b] text-[#71717a] border-[#27272a]'
+            }`}>
+              {trashCount}
+            </span>
+          </button>
+
+          <div className="my-2 border-t border-[#27272a]/40" />
 
           {/* Inactive notes trigger */}
           <button 
@@ -248,11 +358,53 @@ export default function DashboardView({
               </div>
             </div>
             
+            {/* Mobile Segmented Folders */}
+            <div className="md:hidden flex gap-2 p-1 bg-[#121215] border border-[#27272a] rounded-lg mb-6 select-none">
+              <button
+                onClick={() => setCurrentFolder('active')}
+                className={`flex-1 py-1.5 text-center text-[11px] font-semibold rounded-md transition-all ${
+                  currentFolder === 'active'
+                    ? 'bg-brand-primary text-[#0a0012]'
+                    : 'text-[#a1a1aa] hover:text-white'
+                }`}
+              >
+                홈 ({activeCount})
+              </button>
+              <button
+                onClick={() => setCurrentFolder('archive')}
+                className={`flex-1 py-1.5 text-center text-[11px] font-semibold rounded-md transition-all ${
+                  currentFolder === 'archive'
+                    ? 'bg-brand-primary text-[#0a0012]'
+                    : 'text-[#a1a1aa] hover:text-white'
+                }`}
+              >
+                보관함 ({archiveCount})
+              </button>
+              <button
+                onClick={() => setCurrentFolder('trash')}
+                className={`flex-1 py-1.5 text-center text-[11px] font-semibold rounded-md transition-all ${
+                  currentFolder === 'trash'
+                    ? 'bg-brand-primary text-[#0a0012]'
+                    : 'text-[#a1a1aa] hover:text-white'
+                }`}
+              >
+                휴지통 ({trashCount})
+              </button>
+            </div>
+
             {/* Recent Notes Header with toggles */}
             <div className="flex items-end justify-between mb-8">
               <div>
-                <h2 className="text-xl font-bold text-white tracking-tight font-sans">최근 노트</h2>
-                <p className="text-xs text-[#a1a1aa] mt-1 font-sans">작업을 계속해 보세요. 검색된 노트: {filteredNotes.length}개.</p>
+                <h2 className="text-xl font-bold text-white tracking-tight font-sans">
+                  {currentFolder === 'active' && '최근 노트'}
+                  {currentFolder === 'archive' && '보관된 노트'}
+                  {currentFolder === 'trash' && '휴지통'}
+                </h2>
+                <p className="text-xs text-[#a1a1aa] mt-1 font-sans">
+                  {currentFolder === 'active' && `작업을 계속해 보세요. 검색된 노트: ${filteredNotes.length}개.`}
+                  {currentFolder === 'archive' && `보관함에 보관된 노트 파일 리스트입니다: ${filteredNotes.length}개.`}
+                  {currentFolder === 'trash' && `삭제된 임시 보관 문서 리스트입니다: ${filteredNotes.length}개.`}
+                </p>
               </div>
 
               {/* Layout triggers */}
@@ -284,16 +436,32 @@ export default function DashboardView({
 
             {/* Empty list screen */}
             {filteredNotes.length === 0 && (
-              <div className="border border-dashed border-[#27272a] rounded-xl py-16 px-4 text-center">
-                <FileText className="w-8 h-8 text-[#52525b] mx-auto mb-3" />
-                <h3 className="text-sm font-semibold text-white mb-1">필터 조건과 일치하는 노트가 없습니다</h3>
-                <p className="text-xs text-[#71717a] mb-4">검색 키워드를 변경하거나 새 문서를 작성해 보세요.</p>
-                <button
-                  onClick={onCreateNewNote}
-                  className="bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs px-4 py-2 rounded-lg hover:bg-brand-primary/20 transition-all font-semibold cursor-pointer"
-                >
-                  새 문서 파일 만들기 +
-                </button>
+              <div className="border border-dashed border-[#27272a] rounded-xl py-16 px-4 text-center bg-[#121215]/20">
+                {currentFolder === 'active' ? (
+                  <>
+                    <FileText className="w-8 h-8 text-[#52525b] mx-auto mb-3" />
+                    <h3 className="text-sm font-semibold text-white mb-1">작성된 노트가 없습니다</h3>
+                    <p className="text-xs text-[#71717a] mb-4">새 문서를 작성하거나 다른 방식을 시험해 보세요.</p>
+                    <button
+                      onClick={onCreateNewNote}
+                      className="bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs px-4 py-2 rounded-lg hover:bg-brand-primary/20 transition-all font-semibold cursor-pointer"
+                    >
+                      새 문서 파일 만들기 +
+                    </button>
+                  </>
+                ) : currentFolder === 'archive' ? (
+                  <>
+                    <Archive className="w-8 h-8 text-[#52525b] mx-auto mb-3" />
+                    <h3 className="text-sm font-semibold text-white mb-1">보관함이 비어 있습니다</h3>
+                    <p className="text-xs text-[#71717a] mb-2">필요하지 않지만 보관하고 싶은 노트를 보관하여 워크스페이스를 정돈하세요.</p>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-8 h-8 text-[#52525b] mx-auto mb-3" />
+                    <h3 className="text-sm font-semibold text-white mb-1">휴지통이 비어 있습니다</h3>
+                    <p className="text-xs text-[#71717a] mb-2">삭제된 임시 파일이 여기에 보관됩니다. 영구 소멸하거나 직접 복원 가능합니다.</p>
+                  </>
+                )}
               </div>
             )}
 
@@ -306,7 +474,15 @@ export default function DashboardView({
               {filteredNotes.map((note) => (
                 <article 
                   key={note.id}
-                  onClick={() => onSelectNote(note)}
+                  onClick={() => {
+                    if (currentFolder === 'trash') {
+                      if (confirm(`"${note.title}" 문서는 현재 휴지통에 보관되어 있습니다. 편지하려면 먼저 복구해야 합니다. 지금 복구할까요?`)) {
+                        handleRestoreClick(note);
+                      }
+                      return;
+                    }
+                    onSelectNote(note);
+                  }}
                   className={`group bg-[#121215] border border-[#27272a] hover:border-[#52525b] hover:bg-[#18181b] rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-all duration-300 relative overflow-hidden cursor-pointer ${
                     layoutMode === 'grid' ? 'h-52' : 'h-auto py-4 flex-row items-center gap-6'
                   }`}
@@ -342,7 +518,7 @@ export default function DashboardView({
                   {/* tags footer list and Delete action toggle trigger */}
                   <div className={`mt-4 pt-2 border-t border-[#27272a]/40 z-10 flex items-center justify-between shrink-0 ${layoutMode === 'grid' ? '' : 'mt-0 pt-0 border-t-0 gap-4'}`}>
                     <div className="flex flex-wrap gap-1.5">
-                      {note.tags.map((tag) => (
+                      {note.tags.filter(t => !t.startsWith('_')).map((tag) => (
                         <span 
                           key={tag} 
                           className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#09090b] border border-[#27272a]/60 text-[#a1a1aa] hover:text-white transition-colors"
@@ -353,26 +529,103 @@ export default function DashboardView({
                     </div>
  
                     <div className="flex items-center gap-2">
-                      {/* Action trigger: edit directly */}
-                      <span className="text-[10px] text-[#71717a] font-mono group-hover:text-brand-primary transition-colors flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        <span>편집</span>
-                      </span>
- 
-                      {/* Action trigger: delete Note */}
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`정말 이 노트를 삭제하시겠습니까: "${note.title}"?`)) {
-                            onDeleteNote(note.id);
-                          }
-                        }}
-                        className="p-1 rounded bg-[#09090b] hover:bg-red-950/40 border border-[#27272a]/60 text-[#71717a] hover:text-red-400 opacity-60 hover:opacity-100 transition-all cursor-pointer"
-                        title="노트 삭제"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      {currentFolder === 'active' && (
+                        <>
+                          <span className="text-[10px] text-[#71717a] font-mono group-hover:text-brand-primary transition-colors flex items-center gap-1 mr-1">
+                            <Eye className="w-3 h-3" />
+                            <span>편집</span>
+                          </span>
+
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleArchiveClick(note);
+                            }}
+                            className="p-1 rounded bg-[#09090b] hover:bg-brand-primary/10 border border-[#27272a]/60 text-[#71717a] hover:text-brand-primary transition-all cursor-pointer"
+                            title="보관함으로 이동"
+                          >
+                            <Archive className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrashClick(note);
+                            }}
+                            className="p-1 rounded bg-[#09090b] hover:bg-red-950/40 border border-[#27272a]/60 text-[#71717a] hover:text-red-400 opacity-60 hover:opacity-100 transition-all cursor-pointer"
+                            title="휴지통으로 이동"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+
+                      {currentFolder === 'archive' && (
+                        <>
+                          <span className="text-[10px] text-[#71717a] font-mono group-hover:text-brand-primary transition-colors flex items-center gap-1 mr-1">
+                            <Eye className="w-3 h-3" />
+                            <span>열기</span>
+                          </span>
+
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestoreClick(note);
+                            }}
+                            className="p-1 rounded bg-[#09090b] hover:bg-brand-primary/10 border border-[#27272a]/60 text-[#71717a] hover:text-brand-primary transition-all cursor-pointer"
+                            title="보관 해제"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrashClick(note);
+                            }}
+                            className="p-1 rounded bg-[#09090b] hover:bg-red-950/40 border border-[#27272a]/60 text-[#71717a] hover:text-red-400 opacity-60 hover:opacity-100 transition-all cursor-pointer"
+                            title="휴지통으로 이동"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+
+                      {currentFolder === 'trash' && (
+                        <>
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestoreClick(note);
+                            }}
+                            className="p-1 px-2 rounded bg-[#09090b] hover:bg-emerald-950/40 border border-[#27272a]/60 text-[#71717a] hover:text-emerald-400 transition-all cursor-pointer flex items-center gap-1 text-[10px]"
+                            title="복원하기"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>복원</span>
+                          </button>
+
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`※경고: 이 조치는 되돌릴 수 없습니다. 정말 이 노트를 영구 소멸하시겠습니까: "${note.title}"?`)) {
+                                onDeleteNote(note.id);
+                              }
+                            }}
+                            className="p-1 px-2 rounded bg-[#0a0404] hover:bg-red-950/60 border border-[#451a1a] text-[#f87171] hover:text-red-300 transition-all cursor-pointer flex items-center gap-1 text-[10px]"
+                            title="영구 삭제"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>영구 소멸</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </article>

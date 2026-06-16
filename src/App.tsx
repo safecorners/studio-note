@@ -53,6 +53,7 @@ export default function App() {
     plan: 'free'
   });
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [currentFolder, setCurrentFolder] = useState<'active' | 'archive' | 'trash'>('active');
 
   // Handle OAuth callback popup closing
   useEffect(() => {
@@ -502,6 +503,9 @@ export default function App() {
           onCreateNewNote={handleCreateNewNote}
           onDeleteNote={handleDeleteNote}
           onLogout={handleLogout}
+          onUpdateNote={handleUpdateNote}
+          currentFolder={currentFolder}
+          setCurrentFolder={setCurrentFolder}
         />
       )}
       {currentView === 'payment-confirmation' && (
@@ -522,11 +526,14 @@ export default function App() {
           onUpdateNote={handleUpdateNote}
           onLogout={handleLogout}
           onCreateNewNote={handleCreateNewNote}
+          currentFolder={currentFolder}
+          setCurrentFolder={setCurrentFolder}
         />
       )}
       {currentView === 'account' && (
         <AccountInfoView 
           user={currentUser}
+          notes={notes}
           onNavigate={handleNav}
           onLogout={handleLogout}
           onUpdateUser={(updatedFields) => {
@@ -536,6 +543,8 @@ export default function App() {
             }));
           }}
           onCreateNewNote={handleCreateNewNote}
+          currentFolder={currentFolder}
+          setCurrentFolder={setCurrentFolder}
         />
       )}
 

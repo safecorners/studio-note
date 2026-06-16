@@ -14,26 +14,38 @@ import {
   LogOut, 
   Key, 
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Archive,
+  Trash2
 } from 'lucide-react';
-import { UserState, ActiveView } from '../types';
+import { UserState, ActiveView, NoteItem } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface AccountInfoViewProps {
   user: UserState;
+  notes: NoteItem[];
   onNavigate: (view: ActiveView) => void;
   onLogout: () => void;
   onUpdateUser: (updatedFields: Partial<UserState>) => void;
   onCreateNewNote?: () => void;
+  currentFolder: 'active' | 'archive' | 'trash';
+  setCurrentFolder: (folder: 'active' | 'archive' | 'trash') => void;
 }
 
 export default function AccountInfoView({
   user,
+  notes,
   onNavigate,
   onLogout,
   onUpdateUser,
-  onCreateNewNote
+  onCreateNewNote,
+  currentFolder,
+  setCurrentFolder
 }: AccountInfoViewProps) {
+  const activeCount = notes.filter(n => !n.tags.includes('_archived') && !n.tags.includes('_trashed')).length;
+  const archiveCount = notes.filter(n => n.tags.includes('_archived') && !n.tags.includes('_trashed')).length;
+  const trashCount = notes.filter(n => n.tags.includes('_trashed')).length;
+
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(user.fullName);
   const [isSaving, setIsSaving] = useState(false);
@@ -111,16 +123,56 @@ export default function AccountInfoView({
         </div>
 
         {/* Sidebar Nav Middle Items */}
-        <nav className="space-y-1.5 flex-1">
+        <nav className="space-y-1.5 flex-1 select-none">
           {/* Home Directory button */}
           <button 
             id="sidemenu-home"
-            onClick={() => onNavigate('dashboard')}
-            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer text-xs"
+            onClick={() => {
+              setCurrentFolder('active');
+              onNavigate('dashboard');
+            }}
+            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer text-xs border border-transparent"
           >
             <Home className="w-4 h-4 shrink-0" />
-            홈 디렉터리
+            <span>홈 디렉터리</span>
+            <span className="ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-[#18181b] text-[#71717a] border-[#27272a]">
+              {activeCount}
+            </span>
           </button>
+
+          {/* Archive button */}
+          <button 
+            id="sidemenu-archive"
+            onClick={() => {
+              setCurrentFolder('archive');
+              onNavigate('dashboard');
+            }}
+            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer text-xs border border-transparent"
+          >
+            <Archive className="w-4 h-4 shrink-0" />
+            <span>보관함</span>
+            <span className="ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-[#18181b] text-[#71717a] border-[#27272a]">
+              {archiveCount}
+            </span>
+          </button>
+
+          {/* Trash button */}
+          <button 
+            id="sidemenu-trash"
+            onClick={() => {
+              setCurrentFolder('trash');
+              onNavigate('dashboard');
+            }}
+            className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer text-xs border border-transparent"
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            <span>휴지통</span>
+            <span className="ml-auto text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-[#18181b] text-[#71717a] border-[#27272a]">
+              {trashCount}
+            </span>
+          </button>
+
+          <div className="my-2 border-t border-[#27272a]/40" />
 
           {/* Active Note Editor button */}
           <button 
