@@ -591,7 +591,7 @@ export default function NoteEditorView({
 
           {/* account session */}
           <button 
-            onClick={() => { alert(`사용자명: ${user.fullName}\n이메일: ${user.email}`); }}
+            onClick={() => onNavigate('account')}
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <User className="w-4 h-4 shrink-0" />

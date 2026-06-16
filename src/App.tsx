@@ -7,6 +7,7 @@ import LoginPage from './components/LoginPage';
 import DashboardView from './components/DashboardView';
 import PaymentConfirmView from './components/PaymentConfirmView';
 import NoteEditorView from './components/NoteEditorView';
+import AccountInfoView from './components/AccountInfoView';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 
 // Initial master array of mock Obsidian notes
@@ -520,6 +521,20 @@ export default function App() {
           onNavigate={handleNav}
           onUpdateNote={handleUpdateNote}
           onLogout={handleLogout}
+          onCreateNewNote={handleCreateNewNote}
+        />
+      )}
+      {currentView === 'account' && (
+        <AccountInfoView 
+          user={currentUser}
+          onNavigate={handleNav}
+          onLogout={handleLogout}
+          onUpdateUser={(updatedFields) => {
+            setCurrentUser(prev => ({
+              ...prev,
+              ...updatedFields
+            }));
+          }}
           onCreateNewNote={handleCreateNewNote}
         />
       )}

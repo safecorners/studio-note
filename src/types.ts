@@ -4,7 +4,8 @@ export type ActiveView =
   | 'login' 
   | 'dashboard' 
   | 'payment-confirmation' 
-  | 'editor';
+  | 'editor'
+  | 'account';
 
 export interface NoteItem {
   id: string;

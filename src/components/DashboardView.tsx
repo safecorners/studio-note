@@ -81,7 +81,7 @@ export default function DashboardView({
           </div>
           <div>
             <h1 className="text-sm font-bold text-white tracking-tight">Escualo Cloud</h1>
-            <p className="text-[10px] text-brand-accent tracking-wider font-mono uppercase font-semibold">프로 요금제 활성됨</p>
+            <p className="text-[10px] text-brand-accent tracking-wider font-mono uppercase font-semibold">프로 요금제 활성화됨</p>
           </div>
         </div>
 
@@ -129,7 +129,7 @@ export default function DashboardView({
           {/* Account profile link */}
           <button 
             id="sidemenu-account"
-            onClick={() => { alert(`사용자 프로필 세션 정보:\n이름: ${user.fullName}\n이메일: ${user.email}\n요금제: ${user.plan.toUpperCase()}`); }}
+            onClick={() => onNavigate('account')}
             className="flex items-center gap-3 w-full text-left text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-all rounded-lg px-4 py-2.5 cursor-pointer"
           >
             <UserIcon className="w-4 h-4 shrink-0" />
@@ -154,49 +154,38 @@ export default function DashboardView({
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
         
         {/* Top Search bar header */}
-        <header className="hidden md:flex items-center justify-between px-8 py-4 border-b border-[#27272a] bg-[#0c0c0f]/90 backdrop-blur-md shrink-0">
-          <div className="relative w-96 group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a] group-focus-within:text-brand-primary transition-colors" />
-            <input 
-              type="text" 
-              placeholder="에스쿠알로 노트, 태그, 명령어 검색... (Cmd+K)" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#121215] border border-[#27272a] rounded-lg py-2 pl-10 pr-4 text-xs text-white placeholder:text-[#71717a] focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all font-sans"
-            />
-          </div>
+        <header className="hidden md:flex px-6 md:px-8 py-4 border-b border-[#27272a] bg-[#0c0c0f]/90 backdrop-blur-md shrink-0 w-full">
+          <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+            <div className="relative w-96 group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a] group-focus-within:text-brand-primary transition-colors" />
+              <input 
+                type="text" 
+                placeholder="에스쿠알로 노트, 태그, 명령어 검색... (Cmd+K)" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#121215] border border-[#27272a] rounded-lg py-2 pl-10 pr-4 text-xs text-white placeholder:text-[#71717a] focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all font-sans"
+              />
+            </div>
 
-          <div className="flex items-center gap-4">
-            {/* Quick alert bar */}
-            <button 
-              onClick={() => { alert('클라우드 노드 네트워크에 대기 중이거나 충돌하는 동기화 작업이 없습니다.'); }}
-              className="text-[#a1a1aa] hover:text-brand-primary transition-colors cursor-pointer relative"
-              title="알림"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-brand-accent rounded-full"></span>
-            </button>
+            <div className="flex items-center gap-4">
+              {/* Quick alert bar */}
+              <button 
+                onClick={() => { alert('클라우드 노드 네트워크에 대기 중이거나 충돌하는 동기화 작업이 없습니다.'); }}
+                className="text-[#a1a1aa] hover:text-brand-primary transition-colors cursor-pointer relative"
+                title="알림"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-brand-accent rounded-full"></span>
+              </button>
 
-            {/* settings dropdown */}
-            <button 
-              onClick={() => onNavigate('pricing')}
-              className="text-[#a1a1aa] hover:text-brand-primary transition-colors cursor-pointer"
-              title="요금제 및 멤버십"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-
-            {/* User Profile avatar */}
-            <div className="flex items-center gap-2 bg-[#121215] border border-[#27272a] rounded-lg p-1 pr-3">
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-[#27272a] shrink-0 border border-brand-primary">
-                <img 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiz5l82bJVUmSdx8r30f0myP7I0mKYLGZUDf9whClFAHKD1hGTxu8IuQ5KF3ywGs0nbPhgq70uqZqrgfD5PQlIKi2qaCuxSwETFdN4w6ltez4AtZVdjodJy0uKsnnq167Kt1j7aS8VrS2MdCdRbfVO4e3Osue5EOAI28gp2lpjxX0NBTzPgUE4Jd2YbR3s4DID_NEuCFrX6Sj9jRAuFqkIEQ55Madvv5ieGJ1_v9FkE4FK_w28Q37nurSSVySxc5d5mDmMXDv6Sv70" 
-                  alt="Avatar" 
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover opacity-80 mix-blend-luminosity"
-                />
-              </div>
-              <span className="text-[11px] font-medium text-white truncate max-w-[100px]">{user.fullName}</span>
+              {/* settings dropdown */}
+              <button 
+                onClick={() => onNavigate('pricing')}
+                className="text-[#a1a1aa] hover:text-brand-primary transition-colors cursor-pointer"
+                title="요금제 및 멤버십"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </header>
@@ -229,9 +218,9 @@ export default function DashboardView({
           <div className="max-w-6xl mx-auto">
 
             {/* Quick Metrics Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
               {/* Total Notes card */}
-              <div id="stat-total-notes" className="md:col-span-2 bg-[#121215] border border-[#27272a]/80 hover:border-[#3f3f46] rounded-xl p-5 relative overflow-hidden flex flex-col justify-between group h-28 transition-all duration-300">
+              <div id="stat-total-notes" className="bg-[#121215] border border-[#27272a]/80 hover:border-[#3f3f46] rounded-xl p-5 relative overflow-hidden flex flex-col justify-between group h-28 transition-all duration-300">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-0 pointer-events-none" />
                 <div className="z-10 flex flex-col justify-between h-full w-full">
                   <span className="text-[#71717a] text-[10px] font-bold uppercase tracking-wider font-sans">총 노트 수</span>
@@ -245,7 +234,7 @@ export default function DashboardView({
               </div>
 
               {/* Connected Account status */}
-              <div id="stat-account-tier" className="md:col-span-1 bg-[#121215] border border-[#27272a]/80 hover:border-[#3f3f46] rounded-xl p-5 relative overflow-hidden flex flex-col justify-between group h-28 transition-all duration-300">
+              <div id="stat-account-tier" className="bg-[#121215] border border-[#27272a]/80 hover:border-[#3f3f46] rounded-xl p-5 relative overflow-hidden flex flex-col justify-between group h-28 transition-all duration-300">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-0 pointer-events-none" />
                 <div className="z-10 flex flex-col justify-between h-full w-full">
                   <span className="text-[#71717a] text-[10px] font-bold uppercase tracking-wider font-sans">구독 요금제</span>
