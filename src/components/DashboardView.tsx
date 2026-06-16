@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Home, FileText, Edit2, User as UserIcon, LogOut, 
-  Search, Bell, Settings, Grid, List, Trash2, Eye, Code, Terminal
+  Search, Bell, Settings, Grid, List, Trash2, Eye
 } from 'lucide-react';
 import { ActiveView, NoteItem, UserState } from '../types';
 import { supabase } from '../lib/supabase';
@@ -378,21 +378,6 @@ export default function DashboardView({
                 </article>
               ))}
             </div>
-
-            {/* Secondary guide block */}
-            <div className="mt-12 p-6 bg-[#121215] border border-[#27272a] rounded-xl flex items-center justify-between flex-wrap gap-4 select-none">
-              <div className="flex items-center gap-3">
-                <Terminal className="w-5 h-5 text-brand-accent shrink-0" />
-                <div>
-                  <h4 className="text-xs font-semibold text-white">대화형 CLI 통합 시스템</h4>
-                  <p className="text-[10px] text-[#a1a1aa] mt-1">옵시디언 로컬 폴더를 클라우드 파이프라인과 완벽히 동기화하세요.</p>
-                </div>
-              </div>
-              <span className="bg-[#09090b] border border-[#27272a] rounded px-2.5 py-1 text-[9px] font-mono text-[#a1a1aa] select-all">
-                npx escualo-cloud init
-              </span>
-            </div>
-
           </div>
         </div>
 
